@@ -4,6 +4,7 @@
 
 - iVT
 - metric
+- lineAllo
 
 # Directory & Module
 
