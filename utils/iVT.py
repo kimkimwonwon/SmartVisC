@@ -1,6 +1,12 @@
 """
 [Mission 1]
 Based on the traditional(or conventional) iVT filter process, customize it!
+
+Step 1)
+Raw Gaze Point --> Raw Fixation
+
+Step 2)
+Raw Fixation --> Corrected Fixation
 """
 
 

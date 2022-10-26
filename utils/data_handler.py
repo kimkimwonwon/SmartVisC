@@ -4,14 +4,14 @@ from pprint import pprint
 
 from utils.data import Visc
 from utils import iVT
-from utils import correction
+from utils import allocation
 import glob
 
 
 class DataHandler:
     def __init__(self, pr, is_sample=True):
         self.path_root = pr
-        self.path_data = f"{pr}/data"
+        self.path_data = f"{pr}/data/raw"
 
         if is_sample:
             with open(f"{self.path_data}/sample.json", encoding="utf-8") as f:
@@ -35,7 +35,7 @@ class DataHandler:
                 dat = iVT.run(dat['RawGazePoint'], wordAoi)
 
                 true_fixation = dat['TrueFixation']
-                dat = correction.run(true_fixation, wordAoi)
+                dat = allocation.run(true_fixation, wordAoi)
                 datList.append(dat)
             print("Data does not exist!")
         self.data = [Visc(i) for i in datList]
