@@ -17,8 +17,8 @@ sample.json
 - correction.py: **line allocation mission**
 - data.py: data structure
 - data_handler.py: Handler class
-- iVT: **iVT customization mission**
-- metric: **custom metric mission**
+- iVT.py: **iVT Filter customization mission**
+- metric.py: **custom metric mission**
 
 
 
