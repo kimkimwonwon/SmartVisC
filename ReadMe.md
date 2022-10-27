@@ -24,6 +24,3 @@ sample.json
 # Sample Status
 
 ![사진]("https://github.com/yejin109/SmartVisC/blob/iVT/figure/iVT_status.png")
-
-
-
