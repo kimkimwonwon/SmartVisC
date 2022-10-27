@@ -29,14 +29,18 @@ class DataHandler:
             #   - TextMetaData
             #   - WordAOI
             dat_list = []
-            flist = glob.glob(self.path_data)
+            flist = glob.glob(f"{self.path_data}/*.json")
             for fn in flist:
                 # NOTE: 여기에선 사람마다 파일이 나눠져있다고 가정한 것이고, 한 파일에 다 저장된 형태라면
                 # 바로 datlist로 할당해버리면 됨
                 with open(f"{fn}") as f:
                     dat = json.load(f)
                 f.close()
-                dat_list.append(dat)
+
+                if type(dat) == list:
+                    dat_list.extend(dat)
+                else:
+                    dat_list.append(dat)
             print("Data does not exist!")
             self.meta["status"] = "load"
             self.meta["dsrc"] = "raw"
@@ -45,6 +49,9 @@ class DataHandler:
 
     def __len__(self):
         return len(self.data)
+
+    def __str__(self):
+        return f"Status{self.meta['status']}_DataSource{self.meta['dsrc']}"
 
     # STEP1
     def run_ivt(self):
@@ -93,4 +100,6 @@ if __name__ == '__main__':
     pprint(sample.__dict__.keys())
 
     print("WordAOI : ", sample.wordAoiList[0])
+
+    handler.run_alloc()
     print()

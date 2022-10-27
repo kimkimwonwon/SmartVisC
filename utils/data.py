@@ -33,11 +33,17 @@ class RawFixation:
         for k, v in raw.items():
             setattr(self, k, v)
 
+    def __str__(self):
+        return f"Timestamp{self.timestamp}_X{self.x}_Y{self.y}"
+
 
 class CorrectedFixation:
     def __init__(self, raw: dict):
         for k, v in raw.items():
             setattr(self, k, v)
+
+    def __str__(self):
+        return f"Timestamp{self.timestamp}_line{self.line}_order{self.order}"
 
 
 class TextMetaData:
@@ -55,12 +61,19 @@ class Visc:
         self.idx = raw['_id']["$oid"]
         self.screenResolution = raw['deviceInformation']['screenResolution']
 
-        self.age = raw['age']
-        self.gender = raw['gender']
-        self.level = raw['level']
-
-        self.wordAoiList = [WordAoi(i) for i in raw['wordAoi']]
+        # NOTE: sample.json에는 있지만 ivt-sample-data.json에는 없는 것들
+        # 다만 level은 향후 metric에 필요할 것으로 판단
+        # self.age = raw['age']
+        # self.gender = raw['gender']
+        # self.level = raw['level']
+        self.level = None
+        
         self.rawGazePointList = [RawGazePoint(i) for i in raw['rawGazePoint']]
+        # TODO: 원래 있는 것으로 되어있었는데 현재 ivt-sample-data.json 에 없는 상태!! 수정 필요
+        if "wordAoi" in list(raw.keys()):
+            self.wordAoiList = [WordAoi(i) for i in raw['wordAoi']]
+        else:
+            self.wordAoiList = None
 
         self.rawFixationList = None
         self.correctedFixationList = None
@@ -72,6 +85,6 @@ class Visc:
             self.correctedFixationList = [CorrectedFixation(i) for i in raw['correctedFixation']]
 
     def __str__(self):
-        name = f"oid_{self.idx}_age_{self.age}_gender_{self.gender}"
+        name = f"oid_{self.idx}"
         return name
 

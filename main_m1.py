@@ -19,17 +19,13 @@ def main():
     # Phase-1 : iVT Filter & Line Allocation
 
     # Mission 1: iVT Filter
+    bm_rf = handler.get_sample_rf()
     handler.run_ivt()
-
-    # Mission 2: Line Allocation
-    handler.run_alloc()
-
-    # Phase-2 : Metric(TBD)
-
-    # Mission 3: Metric
+    current_rf = handler.get_sample_rf()
+    print()
 
 
 if __name__ == '__main__':
     path_root = os.getcwd()
-    handler = DataHandler(path_root, is_sample=args.is_sample == "1")
+    handler = DataHandler(path_root, is_sample=True)
     main()

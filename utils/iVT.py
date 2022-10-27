@@ -9,17 +9,28 @@ Notation:
     - RF : Raw Fixation
 """
 
+from utils.data import RawFixation
+
 
 def get_rf(rp):
     """
     Description:
 
-    :param rp:
-    :return:
+    :param rp: List<RawGazePoint> Raw Gaze Point
+    :return: List<RawFixation> Raw Fixation
     """
     # TODO: 여기에 RP를 RF로 반환하는 코드 구현하기
-    rf = rp
-    return rf
+    rfs = []
+
+    default = {
+        "duration": 0,
+        "timestamp": 0,
+        "x": 0,
+        "y": 0
+    }
+    rf = RawFixation(default)
+    rfs.append(rf)
+    return rfs
 
 
 def run(rp):
