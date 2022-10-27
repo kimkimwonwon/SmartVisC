@@ -22,3 +22,9 @@ def show_line_plot(vals, title=""):
     plt.plot(vals)
     plt.title(title)
     plt.show()
+
+def plot_text(ax, word_aoi):
+    for word_aoi_i in word_aoi:
+        word_box = word_aoi_i.wordBox
+        ax.text(word_box.x, word_box.y, word_aoi_i.word)
+
