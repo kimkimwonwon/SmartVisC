@@ -9,30 +9,44 @@ Notation:
 
 참고:
 Traditional algorithm:
-    - use backwark velocity
+    - [O] use backwark velocity
+    - [X] attach
+    - [X] chain
+    - [X] cluster
+    - [X] compare
+    - [X] merge
+    - [X] regress
+    - [X] segmet
+    - [X] split
+    - [X] stretch
+    - [X] warp
 """
 
 from utils.data import CorrectedFixation
 
 
-def allocate_line(rf, word_aoi):
-    """
-    :param rf: List<RawFixation> Raw Fixation
-    :param word_aoi: List<WordAoi> wordAOI
-    :return: List<CorrectedFixation> Corrected Fixation
-    """
-    # TODO: 여기에 RF를 CF로 반환하는 코드 구현하기
-    cfs = []
-
-    default = {
+def rf_to_cf(rf):
+    config = {
         "timestamp": 0,
         "line": 0,
         "order": 0,
         "x": 0,
         "y": 0
     }
-    cf = CorrectedFixation(default)
-    cfs.append(cf)
+    cf = CorrectedFixation(config)
+    return cf
+
+
+def allocate_line(rfs, word_aoi):
+    """
+    :param rfs: List<RawFixation> Raw Fixation
+    :param word_aoi: List<WordAoi> wordAOI
+    :return: List<CorrectedFixation> Corrected Fixation
+    """
+    # TODO: 기존의 방식이나 새롭게 고안한 방식 사용하기
+    rfs = rfs
+
+    cfs = [rf_to_cf(rf) for rf in rfs]
     return cfs
 
 
