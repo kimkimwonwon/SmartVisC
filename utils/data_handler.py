@@ -91,6 +91,9 @@ class DataHandler:
     def get_resolution(self):
         return self.data[0].screenResolution
 
+    def get_word_aoi(self):
+        return self.data[0].wordAoiList
+
 
 if __name__ == '__main__':
     os.chdir('..')
