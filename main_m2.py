@@ -1,6 +1,7 @@
 import os
 from utils.data_handler import DataHandler
 import argparse
+from copy import deepcopy
 
 
 parser = argparse.ArgumentParser(
@@ -16,20 +17,17 @@ args = parser.parse_args()
 
 
 def main():
-    # Phase-1 : iVT Filter & Line Allocation
-
     # Mission 1: iVT Filter
-    handler.run_ivt()
+    # 이건 이미 성공했다고 가정
 
     # Mission 2: Line Allocation
+    bm_cf = deepcopy(handler.get_sample_cf())
     handler.run_alloc()
-
-    # Phase-2 : Metric(TBD)
-
-    # Mission 3: Metric
+    current_cf = handler.get_sample_cf()
+    print()
 
 
 if __name__ == '__main__':
     path_root = os.getcwd()
-    handler = DataHandler(path_root, is_sample=args.is_sample == "1")
+    handler = DataHandler(path_root, is_sample=True)
     main()
