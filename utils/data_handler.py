@@ -14,6 +14,10 @@ class DataHandler:
         self.path_data = f"{pr}/data/raw"
         self.meta = dict()
 
+        # Used only for raw data
+        self.num_fixation = 0
+        self.num_saccade = 0
+
         if is_sample:
             with open(f"{pr}/data/sample.json", encoding="utf-8") as f:
                 dat_list = json.load(f)

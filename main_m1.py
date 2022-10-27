@@ -3,7 +3,8 @@ from utils.data_handler import DataHandler
 import argparse
 import matplotlib.pyplot as plt
 from utils.visual import set_scale, plot_points
-
+from copy import deepcopy
+import env
 
 parser = argparse.ArgumentParser(
                     prog='SmartVC',
@@ -22,7 +23,7 @@ def compare_points(rp, point_cur, point_bm, resol):
     set_scale(resol, ax)
     plot_points(ax[0], rp)
     plot_points(ax[1], rp)
-    plot_points(ax[0], point_cur, "current", c='blue', s=20, alpha=1)
+    plot_points(ax[0], point_cur, "current", c='blue', s=20, alpha=0.5)
     plot_points(ax[1], point_bm, "Benchmark", c='red', s=20, alpha=1)
     plt.show()
 
@@ -32,7 +33,7 @@ def main():
 
     # Mission 1: iVT Filter
     # Raw gaze Point
-    rp = handler.get_sample_rp()
+    rp = deepcopy(handler.get_sample_rp())
 
     # Raw Fixation: sample
     bm_rf = handler.get_sample_rf()
@@ -47,6 +48,7 @@ def main():
 
 
 if __name__ == '__main__':
+    setattr(env, "show_all_plots", True)
     path_root = os.getcwd()
     handler = DataHandler(path_root, is_sample=True)
     main()

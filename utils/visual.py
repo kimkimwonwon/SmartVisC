@@ -17,3 +17,8 @@ def set_scale(resol, ax, pad=100):
         ax_i.set_ylim(0-pad, h+pad)
 
 
+def show_line_plot(vals, title=""):
+    plt.figure()
+    plt.plot(vals)
+    plt.title(title)
+    plt.show()
