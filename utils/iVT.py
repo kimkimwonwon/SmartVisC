@@ -16,6 +16,7 @@ import env
 import params
 from collections import defaultdict
 from utils.visual import show_line_plot
+from sklearn.metrics import pairwise_distances
 
 
 def get_xs(obj: list):
@@ -78,12 +79,20 @@ def absolute_threshold(rps):
 
 
 def merge_adj_fixation(rps):
-    # Fixation 사이 Max time: 지금은 죄다 33, 34라서 문제임
-    times = np.array([int(i.timestamp) for i in rps])
-    delta_t = np.lib.stride_tricks.sliding_window_view(times, 2, writeable=True)
-    delta_t = delta_t[:, 1] - delta_t[:, 0]
-    fix_group_id = (delta_t > params.max_time_between_fixations).astype(int).cumsum()
+    # # Fixation 사이 Max time: 지금은 죄다 33, 34라서 문제임
+    # times = np.array([int(i.timestamp) for i in rps])
+    # delta_t = np.lib.stride_tricks.sliding_window_view(times, 2, writeable=True)
+    # delta_t = delta_t[:, 1] - delta_t[:, 0]
+    # fix_group_id = (delta_t > params.max_time_between_fixations).astype(int).cumsum()
 
+    # 근처에 자리 적은 것만 찾기
+    xs = get_xs(rps)[:, np.newaxis]
+    ys = get_ys(rps)[:, np.newaxis]
+    coors = np.concatenate((xs, ys), axis=1)
+    distance_mat = pairwise_distances(coors)
+    nth_neighbor = np.sort(distance_mat, axis=1)[:, 1]/np.sort(distance_mat, axis=1)[:, 1+params.num_neighbor]
+
+    fix_group_id = (nth_neighbor > params.cluster_thr).astype(int).cumsum()
     # NA 값 처리
     fix_group_id = np.append(fix_group_id, fix_group_id[-1])
     for rp, group_id in zip(rps, fix_group_id):

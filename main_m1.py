@@ -23,8 +23,8 @@ def compare_points(rp, point_cur, point_bm, resol):
     set_scale(resol, ax)
     plot_points(ax[0], rp)
     plot_points(ax[1], rp)
-    plot_points(ax[0], point_cur, "current", c='blue', s=20, alpha=0.5)
-    plot_points(ax[1], point_bm, "Benchmark", c='red', s=20, alpha=1)
+    plot_points(ax[0], point_cur, "current", c='blue', s=50, alpha=0.5)
+    plot_points(ax[1], point_bm, "Benchmark", c='red', s=50, alpha=0.5)
     plt.show()
 
 
