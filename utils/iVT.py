@@ -1,50 +1,35 @@
 """
 [Mission 1]
 Based on the traditional(or conventional) iVT filter process, customize it!
+    - Raw Gaze Point --> Raw Fixation
 
-Step 1)
-Raw Gaze Point --> Raw Fixation
 
-Step 2)
-Raw Fixation --> Corrected Fixation
+Notation:
+    - RP: Raw gaze Point
+    - RF : Raw Fixation
 """
 
 
-def fix(red_dot, wordAoi):
+def get_rf(rp):
     """
     Description:
 
-    :param red_dot:
-    :param wordAoi:
+    :param rp:
     :return:
     """
-    # TODO: Customization needed!
-    result = red_dot
-    return result
+    # TODO: 여기에 RP를 RF로 반환하는 코드 구현하기
+    rf = rp
+    return rf
 
 
-def rm_outlier(fixation):
+def run(rp):
     """
     Description:
 
-    :param fixation:
-    :return:
+    :param rp: Raw gaze Point
+    :return: rf: Raw Fixation
     """
-    # TODO: Customization needed!
-    result = fixation
-    return result
 
-
-def run(red_dot, wordAoi):
-    """
-    Description:
-
-    :param red_dot:
-    :param wordAoi:
-    :return:
-    """
-    fixation = fix(red_dot, wordAoi)
-    result = rm_outlier(fixation)
-    return result
-
-
+    # Raw Gaze Point --> Raw Fixation
+    rf = get_rf(rp)
+    return rf
