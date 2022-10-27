@@ -17,11 +17,13 @@ parser.add_argument("--is_sample",
 args = parser.parse_args()
 
 
-def compare_points(point_cur, point_bm, resol):
+def compare_points(rp, point_cur, point_bm, resol):
     fig, ax = plt.subplots(1, 2, figsize=(20, 10))
     set_scale(resol, ax)
-    plot_points(ax[0], point_cur, "current")
-    plot_points(ax[1], point_bm, "Benchmark")
+    plot_points(ax[0], rp)
+    plot_points(ax[1], rp)
+    plot_points(ax[0], point_cur, "current", c='blue', s=20, alpha=1)
+    plot_points(ax[1], point_bm, "Benchmark", c='red', s=20, alpha=1)
     plt.show()
 
 
@@ -29,10 +31,18 @@ def main():
     # Phase-1 : iVT Filter & Line Allocation
 
     # Mission 1: iVT Filter
+    # Raw gaze Point
+    rp = handler.get_sample_rp()
+
+    # Raw Fixation: sample
     bm_rf = handler.get_sample_rf()
+
+    # Raw Fixation: 우리 알고리즘
     handler.run_ivt()
     current_rf = handler.get_sample_rf()
-    compare_points(current_rf, bm_rf, handler.get_resolution())
+
+    # 그림으로 확인하기
+    compare_points(rp, current_rf, bm_rf, handler.get_resolution())
     print()
 
 

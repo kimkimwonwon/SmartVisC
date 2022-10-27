@@ -76,8 +76,8 @@ def run(rps):
     """
     Description:
 
-    :param rps: Raw gaze Point
-    :return: rfs: Raw Fixation
+    :param rps: List<RawGazePoint> Raw gaze Point
+    :return: rfs: List<RawFixation> Raw Fixation
     """
 
     # Raw Gaze Point --> Raw Fixation

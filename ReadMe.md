@@ -21,4 +21,9 @@ sample.json
 - metric.py: **custom metric mission**
 
 
+# Sample Status
+
+![사진]("figure/iVT_status.png")
+
+
 
