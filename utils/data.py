@@ -23,6 +23,9 @@ class RawGazePoint:
     def __init__(self, raw: dict):
         for k, v in raw.items():
             setattr(self, k, v)
+        self.speed = None
+        self.label = None
+        self.fix_group_id = None
 
     def __str__(self):
         return f"blink{self.blink}_timestamp{self.timestamp}"
