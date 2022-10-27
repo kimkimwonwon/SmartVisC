@@ -88,6 +88,9 @@ class DataHandler:
     def get_sample_cf(self):
         return self.data[0].correctedFixationList
 
+    def get_resolution(self):
+        return self.data[0].screenResolution
+
 
 if __name__ == '__main__':
     os.chdir('..')
