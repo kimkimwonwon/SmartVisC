@@ -21,4 +21,9 @@ sample.json
 - metric.py: **custom metric mission**
 
 
+# Sample Status
 
+## iVT Filter
+![사진](/figure/iVT_status.png)
+
+## Line Allocation

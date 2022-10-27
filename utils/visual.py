@@ -1,15 +1,15 @@
 import matplotlib.pyplot as plt
 
 
-def plot_points(ax, points, title):
+def plot_points(ax, points, title="", c="black", s=10, alpha=0.5):
     x = [i.x for i in points]
     y = [i.y for i in points]
 
-    ax.scatter(x, y, s=10)
+    ax.scatter(x, y, s=s, c=c, alpha=alpha)
     ax.set_title(title)
 
 
-def set_scale(resol, ax, pad=40):
+def set_scale(resol, ax, pad=100):
     w = resol['width']
     h = resol['height']
     for ax_i in ax:
@@ -17,7 +17,14 @@ def set_scale(resol, ax, pad=40):
         ax_i.set_ylim(0-pad, h+pad)
 
 
+def show_line_plot(vals, title=""):
+    plt.figure()
+    plt.plot(vals)
+    plt.title(title)
+    plt.show()
+
 def plot_text(ax, word_aoi):
     for word_aoi_i in word_aoi:
         word_box = word_aoi_i.wordBox
         ax.text(word_box.x, word_box.y, word_aoi_i.word)
+
