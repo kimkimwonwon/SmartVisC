@@ -1,1 +1,1 @@
-show_all_plots = False
+SHOW_ALL_PLOTS = False
