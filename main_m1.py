@@ -32,7 +32,7 @@ def main():
     # Phase-1 : iVT Filter & Line Allocation
 
     # Mission 1: iVT Filter
-    # Raw gaze Point
+    # Raw gaze Point : plot에 사용할 점들이 필요. 초기 상태가 필요하기에 deepcopy 진행
     rp = deepcopy(handler.get_sample_rp())
 
     # Raw Fixation: sample
@@ -48,7 +48,9 @@ def main():
 
 
 if __name__ == '__main__':
-    setattr(env, "show_all_plots", True)
+    # 테스트할 때 여러 조건, 상태를 관리하는 방법으로 중간중간 상태를 확인하기 위한 plot을 다 보여주도록 설정한 것
+    setattr(env, "SHOW_ALL_PLOTS", True)
+
     path_root = os.getcwd()
     handler = DataHandler(path_root, is_sample=True)
     main()
