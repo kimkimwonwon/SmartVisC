@@ -218,6 +218,12 @@ def run(rps):
     전처리나 후처리 등의 과정이 추가될 수도 있는 상태.
     """
 
+    # 전처리
+    #   - Blink 처리가 아마 여기서 필요하지 않을까 생각
+
     # Raw Gaze Point --> Raw Fixation
     rfs = get_rf(rps)
+
+    # 후처리(TBD)
+
     return rfs

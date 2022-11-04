@@ -1,10 +1,13 @@
 import os
-from utils.data_handler import DataHandler
 import argparse
 import matplotlib.pyplot as plt
-from utils.visual import set_scale, plot_points
+
 from copy import deepcopy
+
 import env
+from utils.data_handler import DataHandler
+from utils.metric import get_ivt_dashboard
+from utils.visual import set_scale, plot_points
 
 parser = argparse.ArgumentParser(
                     prog='SmartVC',
@@ -43,13 +46,15 @@ def main():
     current_rf = handler.get_sample_rf()
 
     # 그림으로 확인하기
-    compare_points(rp, current_rf, bm_rf, handler.get_resolution())
-    print()
+    # compare_points(rp, current_rf, bm_rf, handler.get_resolution())
+
+    # Metric
+    db = get_ivt_dashboard(handler.get_sample_rp(), current_rf, bm_rf)
 
 
 if __name__ == '__main__':
     # 테스트할 때 여러 조건, 상태를 관리하는 방법으로 중간중간 상태를 확인하기 위한 plot을 다 보여주도록 설정한 것
-    setattr(env, "SHOW_ALL_PLOTS", True)
+    setattr(env, "SHOW_ALL_PLOTS", False)
 
     path_root = os.getcwd()
     handler = DataHandler(path_root, is_sample=True)
