@@ -19,3 +19,5 @@ max_time_between_fixations = 75 # 3.1.6 [-1]문단 참고
 ## Discard short fixations
 min_fix_duration = 60 # 3.1.7 참고
 
+# Line Allocation
+backward_threshold = -600

@@ -21,8 +21,8 @@ args = parser.parse_args()
 def compare_points(point_cur, point_bm, word_aoi, resol):
     fig, ax = plt.subplots(1, 2, figsize=(20, 10))
     set_scale(resol, ax)
-    plot_points(ax[0], point_cur, "current")
-    plot_points(ax[1], point_bm, "Benchmark")
+    plot_points(ax[0], point_cur, "current", c="blue", s=50, alpha=0.5)
+    plot_points(ax[1], point_bm, "Benchmark", c="red", s=50, alpha=0.5)
 
     plot_text(ax[0], word_aoi)
     plot_text(ax[1], word_aoi)
@@ -32,6 +32,7 @@ def compare_points(point_cur, point_bm, word_aoi, resol):
 def main():
     # Mission 1: iVT Filter
     # 이건 이미 성공했다고 가정
+    handler.run_ivt()
 
     # Mission 2: Line Allocation
     bm_cf = deepcopy(handler.get_sample_cf())

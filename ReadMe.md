@@ -27,3 +27,4 @@ sample.json
 ![사진](/figure/iVT_status.png)
 
 ## Line Allocation
+![사진](/figure/lineAllo_status.png)
