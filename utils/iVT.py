@@ -8,14 +8,15 @@ Notation:
     - RP: Raw gaze Point
     - RF : Raw Fixation
 """
-
 from utils.data import RawFixation
-from scipy import signal
+import scipy.signal as signal
+# from scipy import signal
 import numpy as np
+import pandas as pd
 import env
 import params
 from collections import defaultdict
-from utils.visual import show_line_plot
+from utils.visual import show_line_plot, show_line_plot_compare
 from sklearn.metrics import pairwise_distances
 
 
@@ -27,6 +28,16 @@ def get_ys(obj: list):
     return np.array([i.y for i in obj])
 
 
+def get_time(obj: list):
+    return np.array([i.timestamp for i in obj])
+
+
+def get_delta(obj, window=2):
+    delta = np.lib.stride_tricks.sliding_window_view(obj, window, writeable=True)
+    delta = delta[:, -1] - delta[:, 0]
+    return delta
+
+
 def gap_fill_in(rps):
     # TBD: Gap fill in 구현이 이미 되어 있는 데이터의 상태. 추후에 데이터를 받게 되면 구현해야할 필요 가능
     # Parameter: Max Gap Length as mgl
@@ -34,9 +45,23 @@ def gap_fill_in(rps):
     :param rps: List<RawGazePoint>
     :return: List<RawGazePoint>
     다만 여기서 rps의 내부에서 값들의 업데이트나 변경사항이 있다면 알려주기
-    ex. null value를 어떻게 interpolation을 했다
+    ex. null value를 어떻게 interpolation을 했다.
+
+    ver.0.1 : 최근 데이터를 보았을 때 일단 blink는 모두 다 false이지만
+     일부 x,y값이 -9999인 경우가 존재해서 해당 점들의 x,y는 None으로 앞서 처리함. 이것에 대한 interpolation이 필요
+     일단은 무식하게 linear interpolation을 하고 맨 처음부터 NaN인 좌표는 backfill을 이용
     """
     mgl = params.max_gap_length
+    xs = get_xs(rps)
+    ys = get_ys(rps)
+
+    df = pd.DataFrame([xs, ys], index=["X", "Y"]).T
+    df.interpolate(inplace=True)
+    df.fillna(method="bfill", inplace=True)
+    for rp, x, y in zip(rps, df["X"].tolist(), df["Y"].tolist()):
+        rp.x = x
+        rp.y = y
+    
     return rps
 
 
@@ -59,6 +84,11 @@ def noise_reduction(rps):
     for rp, x, y in zip(rps, xs_new, ys_new):
         rp.x = x
         rp.y = y
+
+    # NOTE: ver.0.1: noise reduction 효과에 따라 시계열 그림으로 나타냄.
+    if env.SHOW_ALL_PLOTS:
+        show_line_plot_compare(xs, xs_new, f"Noise Reduction, X with window size = {window_size}")
+        show_line_plot_compare(ys, ys_new, f"Noise Reduction, Y with window size = {window_size}")
     return rps
 
 
@@ -74,25 +104,30 @@ def calculate_velocity(rps):
 
     window_len = params.window_len
 
+    times = get_time(rps)
     xs = get_xs(rps)
     ys = get_ys(rps)
 
-    delta_x = np.lib.stride_tricks.sliding_window_view(xs, 2, writeable=True)
-    delta_x = delta_x[:, 1] - delta_x[:, 0]
-    delta_y = np.lib.stride_tricks.sliding_window_view(ys, 2, writeable=True)
-    delta_y = delta_y[:, 1] - delta_y[:, 0]
+    delta_time = get_delta(times, window_len)
+    delta_x = get_delta(xs, window_len)
+    # TODO: 이렇게 하면 delta_x==0 인 경우 존재해서 일단 그런 경우는 1로 처리하게 놔둠... 이것도 바꿔야함.
+    delta_x[delta_x == 0] = 1
+
+    delta_y = get_delta(ys, window_len)
     # NOTE: 그런데, 여기서 속력이 아니라 속도를 구한다면..?!
     speeds = np.abs(delta_y / delta_x)
     # NA 값 처리
-    # TODO: 어떻게 값을 처리할지 정해야 함. 시간 계산을 하게 되면 1step이 사라지게 되어서
-    speeds = np.append(speeds, [0])
+    # TODO: 어떻게 값을 처리할지 정해야 함. 시간 계산을 하게 되면 window_len 만큼 값이 비게 된다!
+    #   현재는 0으로 채우는 상태
+    speeds = np.append(speeds, [0]*(len(rps)-len(speeds)))
+    assert len(speeds) == len(rps), "속도 계산 시 null 값을 처리해주세요!"
 
     # 각 point에 대해 속력값 업데이트
     for rp, speed in zip(rps, speeds):
         setattr(rp, "speed", speed)
 
     if env.SHOW_ALL_PLOTS:
-        show_line_plot(speeds)
+        show_line_plot(speeds, f"Speed plot with window length = {window_len}")
     return rps
 
 
@@ -145,8 +180,8 @@ def merge_adj_fixation(rps):
     distance_mat = pairwise_distances(coors)
 
     # 임시로 정한 metric
-    nth_neighbor = np.sort(distance_mat, axis=1)[:, 1]/np.sort(distance_mat, axis=1)[:, 1+num_neighbor]
-    fix_group_id = (nth_neighbor > cluster_thr).astype(int).cumsum()
+    nth_neighbor = np.sort(distance_mat, axis=1)[:, 1]
+    fix_group_id = (nth_neighbor < cluster_thr).astype(int).cumsum()
 
     # NA 값 처리
     fix_group_id = np.append(fix_group_id, fix_group_id[-1])
@@ -199,7 +234,7 @@ def get_rf(rps):
     :return: List<RawFixation> Raw Fixation
     """
     # Gap Fill In: 현재 모든 데이터에서 좌표가 다 있는 상태라서 굳이 구현하지 않아도 될듯
-    # rps = gap_fill_in(rps)
+    rps = gap_fill_in(rps)
 
     rps = noise_reduction(rps)
     rps = calculate_velocity(rps)
@@ -220,6 +255,11 @@ def run(rps):
 
     # 전처리
     #   - Blink 처리가 아마 여기서 필요하지 않을까 생각
+    # ver.0.1: 현재 데이터에서 x나 y값이 -9999로 찍히는게 존재. 이거에 대한 처리가 필요
+    for rp in rps:
+        if rp.x == -9999 or rp.y == -9999:
+            rp.x = np.nan
+            rp.y = np.nan
 
     # Raw Gaze Point --> Raw Fixation
     rfs = get_rf(rps)

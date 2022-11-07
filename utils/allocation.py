@@ -67,7 +67,10 @@ def allocate_line(rfs, word_aoi):
     # grouping이 가능하게 됩니다!
     line_idx = np.zeros_like(delta_x)
     line_idx[delta_x < backward_threshold] = 1
-    line_idx = line_idx.cumsum().astype(int)+1
+
+    line_idx = line_idx.cumsum().astype(int)
+    if line_idx[0] == 0:
+        line_idx += 1
 
     # 몇번재 라인인지 각 Raw Fixation에 라벨링
     line_idx = np.append(line_idx, line_idx[-1])
@@ -93,14 +96,16 @@ def allocate_line(rfs, word_aoi):
             order_count = 0
             order = order_count
             line_count += 1
-
-        cf_input = {
-            "timestamp": rf.timestamp,
-            "line": line_id,
-            "order": order,
-            "x": rf.x,
-            "y": line_groups[line_id-1]
-        }
+        try:
+            cf_input = {
+                "timestamp": rf.timestamp,
+                "line": line_id,
+                "order": order,
+                "x": rf.x,
+                "y": line_groups[line_id-1]
+            }
+        except :
+            print()
 
         cfs.append(CorrectedFixation(cf_input))
     return cfs

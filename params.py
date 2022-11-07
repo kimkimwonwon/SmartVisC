@@ -9,10 +9,10 @@ window_size = 3
 window_len = 20 #  3.1.4 마지막 문단 참고
 
 ## absolute_threshold
-velocity_threshold = 5 # 3.1.5 마지막 문단의 값과 다른 값을 현재 사용중
+velocity_threshold = 0.5 # 3.1.5 마지막 문단의 값과 다른 값을 현재 사용중
 
 ## Merge adjacent fixation
-cluster_thr = 0.4
+cluster_thr = 7
 num_neighbor = 10
 max_time_between_fixations = 75 # 3.1.6 [-1]문단 참고
 

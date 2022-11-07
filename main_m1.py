@@ -6,7 +6,7 @@ from copy import deepcopy
 
 import env
 from utils.data_handler import DataHandler
-from utils.metric import get_ivt_dashboard
+# from utils.metric import get_ivt_dashboard
 from utils.visual import set_scale, plot_points
 
 parser = argparse.ArgumentParser(
@@ -27,7 +27,8 @@ def compare_points(rp, point_cur, point_bm, resol):
     plot_points(ax[0], rp)
     plot_points(ax[1], rp)
     plot_points(ax[0], point_cur, "current", c='blue', s=50, alpha=0.5)
-    plot_points(ax[1], point_bm, "Benchmark", c='red', s=50, alpha=0.5)
+    # ver.0.1 : 현재 데이터에 사에서 처리한 raw fixatio이 존재하지 않아서 같이 볼 수 없습니다
+    # plot_points(ax[1], point_bm, "Benchmark", c='red', s=50, alpha=0.5)
     plt.show()
 
 
@@ -46,10 +47,10 @@ def main():
     current_rf = handler.get_sample_rf()
 
     # 그림으로 확인하기
-    # compare_points(rp, current_rf, bm_rf, handler.get_resolution())
+    compare_points(rp, current_rf, bm_rf, handler.get_resolution())
 
     # Metric
-    db = get_ivt_dashboard(handler.get_sample_rp(), current_rf, bm_rf)
+    # db = get_ivt_dashboard(handler.get_sample_rp(), current_rf, bm_rf)
 
 
 if __name__ == '__main__':
@@ -57,5 +58,5 @@ if __name__ == '__main__':
     setattr(env, "SHOW_ALL_PLOTS", False)
 
     path_root = os.getcwd()
-    handler = DataHandler(path_root, is_sample=True)
+    handler = DataHandler(path_root, is_sample=False)
     main()

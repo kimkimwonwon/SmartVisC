@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from copy import deepcopy
 
 import env
-from utils.metric import get_lineAllo_dashboard
+# from utils.metric import get_lineAllo_dashboard
 from utils.data_handler import DataHandler
 from utils.visual import set_scale, plot_points, plot_text
 
@@ -46,16 +46,16 @@ def main():
     current_cf = handler.get_sample_cf()
 
     # 그림으로 확인
-    # compare_points(current_cf, bm_cf, handler.get_word_aoi(), handler.get_resolution())
+    compare_points(current_cf, bm_cf, handler.get_word_aoi(), handler.get_resolution())
 
     # Metric
-    db = get_lineAllo_dashboard(handler.get_sample_rp(), word_aoi, current_cf, bm_cf)
+    # db = get_lineAllo_dashboard(handler.get_sample_rp(), word_aoi, current_cf, bm_cf)
 
 
 if __name__ == '__main__':
     # 테스트할 때 여러 조건, 상태를 관리하는 방법으로 중간중간 상태를 확인하기 위한 plot을 다 보여주도록 설정한 것
-    setattr(env, "SHOW_ALL_PLOTS", True)
+    setattr(env, "SHOW_ALL_PLOTS", False)
 
     path_root = os.getcwd()
-    handler = DataHandler(path_root, is_sample=True)
+    handler = DataHandler(path_root, is_sample=False)
     main()

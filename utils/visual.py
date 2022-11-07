@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 
 
 def plot_points(ax, points, title="", c="black", s=10, alpha=0.5):
-    x = [i.x for i in points]
+    x = [i.x for i in points if i.x]
     y = [i.y for i in points]
 
     ax.scatter(x, y, s=s, c=c, alpha=alpha)
@@ -20,6 +20,15 @@ def set_scale(resol, ax, pad=100):
 def show_line_plot(vals, title=""):
     plt.figure()
     plt.plot(vals)
+    plt.title(title)
+    plt.show()
+
+
+def show_line_plot_compare(before, after, title):
+    plt.figure(figsize=(14, 7))
+    plt.plot(before, label="Before", lw=1, c="blue", alpha=0.5)
+    plt.plot(after, label="After", lw=1, c="red", alpha=0.5)
+    plt.legend()
     plt.title(title)
     plt.show()
 

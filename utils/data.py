@@ -22,6 +22,8 @@ class WordAoi:
 class RawGazePoint:
     def __init__(self, raw: dict):
         for k, v in raw.items():
+            if k == "timestamp":
+                v = int(v)
             setattr(self, k, v)
         self.speed = None
         self.label = None
