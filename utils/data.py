@@ -37,6 +37,9 @@ class RawFixation:
     def __init__(self, raw: dict):
         for k, v in raw.items():
             setattr(self, k, v)
+        self.is_backward = None
+        self.segment_id = None
+        self.ftype = None
         self.line_group_id = None
 
     def __str__(self):

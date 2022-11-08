@@ -44,7 +44,7 @@ class DataHandler:
                 with open(f"{fn}", encoding="utf-8") as f:
                     dat = json.load(f)
                 f.close()
-
+                dat = [dat[30]]
                 if type(dat) == list:
                     for i, tmp in enumerate(dat):
                         if len(tmp["rawGazePoint"]) == 0:

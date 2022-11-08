@@ -55,6 +55,7 @@ def main():
 if __name__ == '__main__':
     # 테스트할 때 여러 조건, 상태를 관리하는 방법으로 중간중간 상태를 확인하기 위한 plot을 다 보여주도록 설정한 것
     setattr(env, "SHOW_ALL_PLOTS", False)
+    setattr(env, "LOG_ALL", True)
 
     path_root = os.getcwd()
     handler = DataHandler(path_root, is_sample=False)

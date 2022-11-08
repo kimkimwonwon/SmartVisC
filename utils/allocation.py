@@ -25,6 +25,7 @@ import numpy as np
 from utils.data import CorrectedFixation
 from collections import defaultdict
 import params
+import env
 
 
 def rf_to_cf(rf):
@@ -37,6 +38,45 @@ def rf_to_cf(rf):
     }
     cf = CorrectedFixation(config)
     return cf
+
+
+def classify_backward(rfs: list):
+    xs = np.array([rf.x for rf in rfs])
+    delta_xs = xs[:-1] - xs[1:]
+    delta_xs = np.concatenate((delta_xs, [0]))
+
+    bward_thr = params.backward_threshold
+    is_bwards = delta_xs < bward_thr
+
+    fr_count = 0
+    seg_id = 0
+    for i, (rf, is_bward) in enumerate(zip(rfs, is_bwards)):
+        rf.is_backward = is_bward
+        if ~ is_bward:
+            rf.ftype = "Forward Reading"
+            fr_count += 1
+        else:
+            if i == 0:
+                pass
+            seg_id += 1
+        rf.segment_id = seg_id
+    if env.LOG_ALL:
+        fr_type_count = len([i for i, rf in enumerate(rfs) if rf.ftype == "Forward Reading"])
+        assert fr_count == fr_type_count, "Forward Reading 배정이 잘못되었습니다!"
+        print(f"Backward Number : {len(rfs)-fr_count}/{len(rfs)}")
+    return rfs
+
+
+def flatten_segment(rfs: list):
+    segment_group = defaultdict(list)
+    for rf in rfs:
+        segment_group[rf.segment_id].append(rf)
+
+    for group_id, group in segment_group:
+        y = [rf.y for rf in group]
+        for rf in group:
+            rf.y = np.median(y)
+    return rfs
 
 
 def allocate_line(rfs, word_aoi):
@@ -111,11 +151,13 @@ def allocate_line(rfs, word_aoi):
     return cfs
 
 
-def run(rf, word_aoi):
+def run(rfs, word_aoi):
     # 전처리(TBD)
 
     # Raw Fixation --> Corrected Fixation
-    cf = allocate_line(rf, word_aoi)
+    rfs = classify_backward(rfs)
+    rfs = flatten_segment(rfs)
+    cf = allocate_line(rfs, word_aoi)
 
     # 후처리(TBD)
 
