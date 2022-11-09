@@ -1,7 +1,10 @@
 class WordBox:
     def __init__(self, raw: dict):
-        for k, v in raw.items():
-            setattr(self, k, v)
+        self.height = raw["height"]
+        self.width = raw["width"]
+        # ver.0.2 : 단어 중심이 오도록 정렬
+        self.x = raw["x"] + self.height/2
+        self.y = raw["y"] + self.width/2
 
     def __str__(self):
         return f"X{self.x}_Y{self.y}_H{self.height}_W{self.width}"
@@ -10,10 +13,10 @@ class WordBox:
 class WordAoi:
     def __init__(self, raw: dict):
         self.idx_visc = raw['_id']["$oid"]
-        self.line = raw['line']
+        self.line = raw['line'] - 1
         self.word = raw['word']
-        self.order = raw['order']
-        self.wordBox = WordBox(raw['wordBox'])
+        self.order = raw['order'] - 1
+        self.wordBox = WordBox(raw['wordBox'])        
 
     def __str__(self):
         return f"{self.word}_line{self.line}_order{self.order}"
@@ -38,9 +41,10 @@ class RawFixation:
         for k, v in raw.items():
             setattr(self, k, v)
         self.is_backward = None
-        self.segment_id = None
         self.ftype = None
-        self.line_group_id = None
+        self.segment_id = None
+        self.line_id = None
+        self.order_id = None
 
     def __str__(self):
         return f"Timestamp{self.timestamp}_X{self.x}_Y{self.y}"
@@ -48,8 +52,12 @@ class RawFixation:
 
 class CorrectedFixation:
     def __init__(self, raw: dict):
-        for k, v in raw.items():
-            setattr(self, k, v)
+        self.timestamp = raw['timestamp']
+        self.line = raw['line']
+        self.order = raw['order']
+        self.duration = raw['duration']
+        self.x = raw['x']
+        self.y = raw['y']
 
     def __str__(self):
         return f"Timestamp{self.timestamp}_line{self.line}_order{self.order}"

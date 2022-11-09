@@ -9,6 +9,13 @@ def plot_points(ax, points, title="", c="black", s=10, alpha=0.5):
     ax.set_title(title)
 
 
+def plot_lines(ax, points, c="black", lw=1):
+    x = [i.x for i in points if i.x]
+    y = [i.y for i in points]
+
+    ax.plot(x, y, c=c, lw=lw)
+
+
 def set_scale(resol, ax, pad=100):
     w = resol['width']
     h = resol['height']

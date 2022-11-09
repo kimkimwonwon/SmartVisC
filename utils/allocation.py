@@ -26,25 +26,28 @@ from utils.data import CorrectedFixation
 from collections import defaultdict
 import params
 import env
+from sklearn.metrics import pairwise_distances
 
 
-def rf_to_cf(rf):
-    config = {
-        "timestamp": 0,
-        "line": 0,
-        "order": 0,
-        "x": 0,
-        "y": 0
-    }
-    cf = CorrectedFixation(config)
-    return cf
+# ver.0.1: 전체 크기  조정
+def scaling(rfs):
+    coors = [[rf.x, rf.y] for rf in rfs]
+    coors = np.array(coors)
+    x_min, y_min = np.min(coors, axis=0)
+
+    for rf in rfs:
+        rf.x -= x_min
+        rf.y -= y_min
+    return rfs
 
 
+# ver.0.1: backward movement 감지 (hyper parameter issue)
 def classify_backward(rfs: list):
     xs = np.array([rf.x for rf in rfs])
     delta_xs = xs[:-1] - xs[1:]
     delta_xs = np.concatenate((delta_xs, [0]))
 
+    # NOTE: hyper parameter
     bward_thr = params.backward_threshold
     is_bwards = delta_xs < bward_thr
 
@@ -67,18 +70,102 @@ def classify_backward(rfs: list):
     return rfs
 
 
+# ver.0.1: 점들 높이 맞추기
 def flatten_segment(rfs: list):
     segment_group = defaultdict(list)
     for rf in rfs:
         segment_group[rf.segment_id].append(rf)
 
-    for group_id, group in segment_group:
+    for group_id, group in segment_group.items():
         y = [rf.y for rf in group]
         for rf in group:
             rf.y = np.median(y)
     return rfs
 
 
+# ver.0.1: 줄 배정
+def allocate_line_id(rfs, word_aois):
+    line_ys = [None] * (word_aois[-1].line+1)
+    for word_aoi in word_aois:
+        line_ys[word_aoi.line] = word_aoi.wordBox.y
+    line_ys = np.array(line_ys)[:, np.newaxis]
+
+    segment_ys = [None] * (rfs[-1].segment_id+1)
+    for rf in rfs:
+        segment_ys[rf.segment_id] = rf.y
+    segment_ys = np.array(segment_ys)[:, np.newaxis]
+
+    distances = pairwise_distances(segment_ys, line_ys)
+    line_idx = np.argmin(distances, axis=1)
+
+    for rf in rfs:
+        rf.line_id = line_idx[rf.segment_id]
+    return rfs
+
+
+# ver.0.1 : 단어 배정
+def allocate_order_id(rfs, word_aois):
+    line_group = defaultdict(list)
+    for word_aoi in word_aois:
+        line_group[word_aoi.line].append(word_aoi)
+
+    segment_group = defaultdict(list)
+    for rf in rfs:
+        segment_group[rf.segment_id].append(rf)
+
+    for segment_group_id, segment in segment_group.items():
+        line_id = segment[0].line_id
+        line = line_group[line_id]
+        line_x = np.array([word.wordBox.x for word in line])[:, np.newaxis]
+        segment_x = np.array([point.x for point in segment])[:, np.newaxis]
+
+        distances = pairwise_distances(segment_x, line_x)
+        word_idx = np.argmin(distances, axis=1)
+        for rf, word_id in zip(segment, word_idx):
+            rf.order_id = word_id
+
+    if env.LOG_ALL:
+        wrong_cnt = 0
+        total_cnt = 0
+        for segment in segment_group.values():
+            word_idx = [word.order_id for word in segment]
+            word_idx = np.array(word_idx)
+            total_cnt += len(word_idx)
+            wrong_cnt += ((word_idx[1:]-word_idx[:-1]) < 0).sum()
+
+        print(f"잘못된 단어(order id) 배정 횟수: {wrong_cnt}/{total_cnt}")
+    return rfs
+
+
+def _get_inputs(rf, word_aois):
+    for word_aoi in word_aois:
+        if rf.line_id == word_aoi.line and rf.order_id == word_aoi.order:
+            word = word_aoi
+
+    cf_input = {
+        "duration": 30,
+        "timestamp": rf.timestamp,
+        "line": rf.line_id,
+        "order": rf.order_id,
+        "x": word.wordBox.x,
+        "y": word.wordBox.y
+    }
+    return cf_input
+
+
+# ver.0.1: CF로 만들기
+def to_CorrectedFixation(rfs, word_aois):
+    cfs = [CorrectedFixation(_get_inputs(rfs[0], word_aois))]
+    for rf in rfs[1:]:
+        past = cfs[-1]
+        if past.line == rf.line_id and past.order == rf.order_id:
+            past.duration += rf.timestamp - past.timestamp
+        else:
+            cfs.append(CorrectedFixation(_get_inputs(rf, word_aois)))
+    return cfs
+
+
+# Deprecated
 def allocate_line(rfs, word_aoi):
     # Parameter : Backward Threshold
     """
@@ -146,19 +233,21 @@ def allocate_line(rfs, word_aoi):
             }
         except :
             print()
-
         cfs.append(CorrectedFixation(cf_input))
     return cfs
 
 
-def run(rfs, word_aoi):
+def run(rfs, word_aois):
     # 전처리(TBD)
 
     # Raw Fixation --> Corrected Fixation
     rfs = classify_backward(rfs)
+    rfs = scaling(rfs)
     rfs = flatten_segment(rfs)
-    cf = allocate_line(rfs, word_aoi)
 
+    rfs = allocate_line_id(rfs, word_aois)
+    rfs = allocate_order_id(rfs, word_aois)
+    cfs = to_CorrectedFixation(rfs, word_aois)
     # 후처리(TBD)
 
-    return cf
+    return cfs
