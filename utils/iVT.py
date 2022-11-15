@@ -194,35 +194,43 @@ def merge_adj_fixation(rps):
 
 
 def discard_short_fixation(rps):
-    # Parameter : Minimum fixation parameter as min_fix_duration
-    """
-    :param rps: List<RawGazePoint>
-    :return: List<RawFixation>
+    velocity_threshold = params.velocity_threshold
 
-    해당 과정에서 Raw Fixation을 반환하게 됨.
-    Baseline에서는 그냥 merge해놓은 동일한 group만 반환하고 있고,
-    실제로 거리에 따라서 버리는 것은 구현되어 있지 않음.
-
-    RawFixation을 만들기 위해선
-    (x, y, timestamp, duration)이 필수요소로, 이를 만들어 주는 코드가 같이 구현되어야 함.
-    """
-    min_fix_duration = params.min_fix_duration
-
-    # NOTE: 전처리된 rps에서 이제 골라서 duration까지 구하는 것 포함
     fix_groups = defaultdict(lambda: defaultdict(list))
-    for rp in rps:
-        fix_groups[rp.fix_group_id]["x"].append(rp.x)
-        fix_groups[rp.fix_group_id]["y"].append(rp.y)
-        fix_groups[rp.fix_group_id]["timestamp"].append(int(rp.timestamp))
+    fix_group_id = 0
 
-    rf_inputs = list(map(lambda fix_group: {
-        "x": np.median(fix_group['x']),
-        "y": np.median(fix_group['y']),
-        "timestamp": np.max(fix_group['timestamp']),
-        "duration": np.max(fix_group['timestamp']) - np.min(fix_group['timestamp'])
+    for rp in rps[:-1]:
+        if rp.speed > velocity_threshold:
+            setattr(rp, "label", "saccade")
+    #         print('saccade')
+            rp.fix_group_id = fix_group_id
+            fix_groups[fix_group_id]["x"].append(rp.x)
+            fix_groups[fix_group_id]["y"].append(rp.y)
+            fix_groups[fix_group_id]["timestamp"].append(rp.timestamp)
+            fix_group_id += 1
+        else:
+            setattr(rp, "label", "fixation")
+    #         print('fixation')
+            rp.fix_group_id = fix_group_id
+            fix_groups[fix_group_id]["x"].append(rp.x)
+            fix_groups[fix_group_id]["y"].append(rp.y)
+            fix_groups[fix_group_id]["timestamp"].append(rp.timestamp)
+        
+    for rp in rps:   
+        if len(fix_groups[rp.fix_group_id]["x"]) == 1:
+            del(fix_groups[rp.fix_group_id])
+    
+    min_fix_duration = params.min_fix_duration
+        
+    rf_inputs = list(map(lambda fix_group : {
+        "x" : np.median(fix_group["x"]),
+        "y" : np.median(fix_group["y"]),
+        "timestamp" : np.max(fix_group["timestamp"]),
+        "duration" : np.max(fix_group["timestamp"]) - np.min(fix_group["timestamp"])
     }, fix_groups.values()))
 
-    rfs = [RawFixation(rf_input) for rf_input in rf_inputs]
+    rfs = [RawFixation(rf_input) for rf_input in rf_inputs if rf_input['duration'] >= min_fix_duration]
+
     return rfs
 
 
