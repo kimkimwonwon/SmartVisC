@@ -28,7 +28,7 @@ def compare_points(rp, point_cur, point_bm, resol):
     plot_points(ax[1], rp)
     plot_points(ax[0], point_cur, "current", c='blue', s=50, alpha=0.5)
     # ver.0.1 : 현재 데이터에 사에서 처리한 raw fixatio이 존재하지 않아서 같이 볼 수 없습니다
-    # plot_points(ax[1], point_bm, "Benchmark", c='red', s=50, alpha=0.5)
+    plot_points(ax[1], point_bm, "Benchmark", c='red', s=50, alpha=0.5)
     plt.show()
 
 
@@ -40,7 +40,7 @@ def main():
     rp = deepcopy(handler.get_sample_rp())
 
     # Raw Fixation: sample
-    bm_rf = handler.get_sample_rf()
+    bm_rf = handler.get_sample_cf()
 
     # Raw Fixation: 우리 알고리즘
     handler.run_ivt()
