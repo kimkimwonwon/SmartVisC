@@ -1,7 +1,9 @@
 # iVT Filter parameter
 ## Gap fill-in
 max_gap_length = 75 # 3.1.1.4 참고
-
+max_fill_length = 250
+max_y_distance = 100
+max_x_distance = 100
 ## Noise Reduction
 window_size = 3
 
