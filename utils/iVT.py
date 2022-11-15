@@ -37,32 +37,172 @@ def get_delta(obj, window=2):
     delta = delta[:, -1] - delta[:, 0]
     return delta
 
+def time_correction(rps):
+
+  """
+  :param rps: List<RawGazePoint>
+  :return: List<RawGazePoint>
+  timestamp가 중복인 경우를 찾고, 중복 바로 뒤에 나오는 timestamp과, 중복값들 중 첫 timestamp을 비교
+  1. 중복 바로 뒤 timestamp - 중복값들 중 첫 timestamp > 40 
+  : 단순 중복이 아닌 경우
+  1) 중복 바로 뒤 x,y값이 결측값이 아닌 경우 : 중복값에 대하여 그 자리에 timestamp, x, y를 선형으로 fill-in
+  2) 중복 바로 뒤 x,y값이 결측값인 경우 : 중복값에 대하여 그 자리에 timestamp는 선형으로 fill-in하고 x,y는 결측값 처리
+  -> 결측값으로 처리됨으로써 뒤에서 gap-fill-in에서 처리될 수 있도록 함.
+  2. 중복 바로 뒤 timestamp - 중복값들 중 첫 timestamp <= 40
+  : 단순 중복인 경우임. 40보다 차이가 덜 난다는 것은, 그냥 똑같은 값이 두 번 들어간 것이고 시선이 두 개였다고 보기는 어려움.
+  : 중복값을 그냥 없애줌.
+  """
+
+  time = get_time(rps)
+  xs = get_xs(rps)
+  ys = get_ys(rps)
+  xs_new = xs.copy()
+  ys_new = ys.copy()
+  time_new = time.copy()
+  dup = []
+  just_error = []
+
+  for i in range(1,len(time)-1):
+    if time[i] == time[i-1]:
+      dup.append(i-1)
+      dup.append(i)
+    elif dup==[]:
+      pass
+    else:
+      dup = set(dup)
+      dup = sorted(list(dup))
+      time_after = time[dup[-1]+1]
+      time_before = time[dup[0]]
+      time_distance = time_after-time_before
+      
+      if time_distance > 40: # 1.중복 바로 뒤 timestamp - 중복값들 중 첫 timestamp > 40 
+        x_after = xs[dup[-1]+1] # 중복값 끝난 뒤에 제대로 나오는 정상적인 값
+        x_before = xs[dup[0]] # 중복값 처음에 나오는 제대로 된 값
+        x_distance = x_after-x_before
+        y_after = ys[dup[-1]+1] # 중복값 끝난 뒤에 제대로 나오는 정상적인 값
+        y_before = ys[dup[0]] # 중복값 처음에 나오는 제대로 된 값
+        y_distance = y_after-x_before
+
+        if ((~np.isnan(x_after)) and (~np.isnan(y_after))): # 1) 중복 바로 뒤 x,y값이 결측값이 아닌 경우
+          for j in range(1,len(dup)):
+            time_new[dup[j]] = int(time_before + (time_distance/len(dup))*j)
+            xs_new[dup[j]] = x_before + (x_distance/len(dup))*j
+            ys_new[dup[j]] = y_before + (y_distance/len(dup))*j
+        else: # 2) 중복 바로 뒤 x,y값이 결측값인 경우
+          for j in range(1,len(dup)):
+            time_new[dup[j]] = int(time_before + (time_distance/len(dup))*j)
+            # timestamp는 선형 보간
+            xs_new[dup[j]] = np.nan
+            ys_new[dup[j]] = np.nan
+            # xs와 ys 모두 결측으로 처리하여 gapfillin에서 알아서 처리하도록.
+
+      else: # 2. 중복 바로 뒤 timestamp - 중복값들 중 첫 timestamp <= 40
+        for duplication in dup[1:]:
+          just_error.append(duplication)
+
+      dup = []
+
+  for error in just_error[::-1]:
+    # 뒤에서부터 제거해야 안정적으로 index에 맞춰 제거 가능
+      xs_new = np.delete(xs_new, error)
+      ys_new = np.delete(ys_new, error)
+      time_new = np.delete(time_new, error)
+      rps.pop(error)
+
+  for rp, x, y, time in zip(rps, xs_new, ys_new,time_new):
+    rp.x = x
+    rp.y = y
+    rp.timestamp = time
+  
+  return rps
 
 def gap_fill_in(rps):
-    # TBD: Gap fill in 구현이 이미 되어 있는 데이터의 상태. 추후에 데이터를 받게 되면 구현해야할 필요 가능
-    # Parameter: Max Gap Length as mgl
-    """
-    :param rps: List<RawGazePoint>
-    :return: List<RawGazePoint>
-    다만 여기서 rps의 내부에서 값들의 업데이트나 변경사항이 있다면 알려주기
-    ex. null value를 어떻게 interpolation을 했다.
 
-    ver.0.1 : 최근 데이터를 보았을 때 일단 blink는 모두 다 false이지만
-     일부 x,y값이 -9999인 경우가 존재해서 해당 점들의 x,y는 None으로 앞서 처리함. 이것에 대한 interpolation이 필요
-     일단은 무식하게 linear interpolation을 하고 맨 처음부터 NaN인 좌표는 backfill을 이용
-    """
-    mgl = params.max_gap_length
-    xs = get_xs(rps)
-    ys = get_ys(rps)
+  """
+  :param rps: List<RawGazePoint>, max_gap_length, max_fill_length, max_x_distance, max_y_distance
+  :return: List<RawGazePoint>
+  max_gap_length : 선형으로 interpolate 할 수 있는 gap의 최소 길이. 논문에서 '보간 뒤에도 최대한으로 존재할 수 있는 gap의 길이'로 정의되어 변수명을 이렇게 함.
+  max_fill_length :선형으로 interpolate 할 수 있는 gap의 최대 길이. 너무 gap이 크면 보간하는 것이 의미가 없기 때문
+  max_x_distance : 선형으로 interpolate 하기 위한 조건, gap에서의 x 좌표 차가 이보다 작아야 함 
+  max_y_distance : 선형으로 interpolate 하기 위한 조건, gap에서의 y 좌표 차가 이보다 작아야 함 
+  1. max_gap_length < gap의 기간 < max_fill_length
+  1) x 좌표 차이 < max_x_distance & y 좌표 차이 < max_y_distance : timestamp에 비례하여 선형으로 보간
+  2) otherwise : timestamp를 연속적으로 만들기
+  2. gap의 기간 < max_gap_length (즉 1,2개씩만 결측이 연속으로 존재하는 경우) : 그냥 gap 자체를 drop ; 굳이 timestamp를 당길 이유가 없음
+  3. gap의 기간 > max_fill_length : timestamp를 연속적으로 만들기
+  """
+  mgl = params.max_gap_length
+  mfl = params.max_fill_length
+  myd = params.max_y_distance
+  mxd = params.max_x_distance
+  time = get_time(rps)
+  xs = get_xs(rps)
+  ys = get_ys(rps)
+  xs_new = xs.copy()
+  ys_new = ys.copy()
+  time_new = time.copy()
+  gaps = []
+  not_filled = []
+  count = 0
 
-    df = pd.DataFrame([xs, ys], index=["X", "Y"]).T
-    df.interpolate(inplace=True)
-    df.fillna(method="bfill", inplace=True)
-    for rp, x, y in zip(rps, df["X"].tolist(), df["Y"].tolist()):
-        rp.x = x
-        rp.y = y
+  for i in range(len(xs)):
     
-    return rps
+    if (np.isnan(xs[i])) or (np.isnan(ys[i])):
+      gaps.append(i)
+      count=count+1
+    elif count==0:
+      pass
+    else:
+      time_after = time[gaps[-1]+1]
+      time_before = time[gaps[0]-1]
+      time_duration = time_after-time_before
+      if (time_duration >= mgl) and (time_duration <= mfl):
+        xbefore = xs[gaps[0]-1]
+        xafter = xs[gaps[-1]+1]
+        ybefore = ys[gaps[0]-1]
+        yafter = ys[gaps[-1]+1]
+        if (abs(ybefore - yafter) < myd) and (abs(xbefore-xafter) < mxd): 
+          for gap in gaps:
+            xs_new[gap] = xafter - ((time_after-time[gap])/time_duration)*(xafter-xbefore) ## scaler 정의 및 gap fill in
+            ys_new[gap] = yafter - ((time_after-time[gap])/time_duration)*(yafter-ybefore)
+        else:
+          time_new[gaps[-1]+1:] = time_new[gaps[-1]+1:] - time_duration+33 # gap 이후의 것들의 timestamp 당겨오기
+          # 보통 33 가량 timestamp 차이나므로, 당겨온 간격은 33으로 설정.
+          # gap에서의 값들은, 뒤에서 삭제될 예정이기에 딱히 고려할 필요 없음. gap보다 뒤의 값들에 대해서만 당겨오기
+          for gap in gaps:
+            not_filled.append(gap)
+      elif(time_duration < mgl):
+        for gap in gaps:
+          not_filled.append(gap)
+      else: #time_duration > mfl
+        time_new[gaps[-1]+1:] = time_new[gaps[-1]+1:] - time_duration+33 # gap 이후의 것들의 timestamp 당겨오기
+        # 보통 33 가량 timestamp 차이나므로, 당겨온 간격은 33으로 설정.
+          # gap에서의 값들은, 뒤에서 삭제될 예정이기에 딱히 고려할 필요 없음. gap보다 뒤의 값들에 대해서만 당겨오기
+        for gap in gaps:
+          not_filled.append(gap)
+      if i != (len(xs)-1): # 마지막에 nan 값이 존재하는 경우를 처리하기 위함.
+        count=0
+        gaps=[]
+
+  # 위의 for문은, 마지막에 nan 값이 존재하는 경우를 고려하지 못하므로 따로 처리
+  if len(xs)!=0:
+    if (np.isnan(xs[(len(xs)-1)])) or (np.isnan(ys[(len(xs)-1)])):
+      for gap in gaps:
+        not_filled.append(gap)
+
+  for gap in not_filled[::-1]: # timestamp 당겨서 gap을 제거하는 경우, 그냥 제거하는 경우 모두에 대해서 없애기
+  # 뒤에서부터 제거해야 안정적으로 index에 맞춰 제거 가능
+    xs_new = np.delete(xs_new, gap)
+    ys_new = np.delete(ys_new, gap)
+    time_new = np.delete(time_new, gap)
+    rps.pop(gap)
+
+
+  for rp, x, y, time in zip(rps, xs_new, ys_new,time_new):
+    rp.x = x
+    rp.y = y
+    rp.timestamp = time
+  return rps
 
 
 def noise_reduction(rps):
@@ -234,6 +374,7 @@ def get_rf(rps):
     :return: List<RawFixation> Raw Fixation
     """
     # Gap Fill In: 현재 모든 데이터에서 좌표가 다 있는 상태라서 굳이 구현하지 않아도 될듯
+    rps = time_correction(rps)
     rps = gap_fill_in(rps)
 
     rps = noise_reduction(rps)
