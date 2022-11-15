@@ -76,20 +76,107 @@ def noise_reduction(rps):
     xs = get_xs(rps)
     ys = get_ys(rps)
 
-    # 방법 1: avg
-    window_size = params.window_size
-    window = np.ones(window_size)/window_size
-    xs_new = signal.convolve(xs, window, mode="same")
-    ys_new = signal.convolve(ys, window, mode="same")
+    # # 방법 1: avg
+    # window_size = params.window_size
+    # window = np.ones(window_size)/window_size
+    # xs_new = signal.convolve(xs, window, mode="same")
+    # ys_new = signal.convolve(ys, window, mode="same")
+    # for rp, x, y in zip(rps, xs_new, ys_new):
+    #     rp.x = x
+    #     rp.y = y
+
+    # # NOTE: ver.0.1: noise reduction 효과에 따라 시계열 그림으로 나타냄.
+    # if env.SHOW_ALL_PLOTS:
+    #     show_line_plot_compare(xs, xs_new, f"Noise Reduction, X with window size = {window_size}")
+    #     show_line_plot_compare(ys, ys_new, f"Noise Reduction, Y with window size = {window_size}")
+    #방법 2 : Exponential smoothing
+    #t 시점의 actual 관측치 * alpha + t-1 예측값 *( 1-alpha)
+
+    alpha= 0.7 #alpha값은 메트릭을 고려하여 추후 변경 
+    xs_new= [0]*len(xs)
+    ys_new= [0]*len(ys)
+    for idx,i,in enumerate(xs_new):
+        if idx==0:
+            xs_new[idx]= xs[0]
+        else: 
+            xs_new[idx] = alpha* (xs[idx])+ (1-alpha)*(xs_new[idx-1]) 
+    for idx,i,in enumerate(ys_new):
+        if idx==0:
+            ys_new[idx]= ys[0]
+        else: 
+            ys_new[idx] = alpha* (ys[idx])+ (1-alpha)*(ys_new[idx-1]) 
+
     for rp, x, y in zip(rps, xs_new, ys_new):
         rp.x = x
         rp.y = y
 
-    # NOTE: ver.0.1: noise reduction 효과에 따라 시계열 그림으로 나타냄.
-    if env.SHOW_ALL_PLOTS:
-        show_line_plot_compare(xs, xs_new, f"Noise Reduction, X with window size = {window_size}")
-        show_line_plot_compare(ys, ys_new, f"Noise Reduction, Y with window size = {window_size}")
     return rps
+
+    # #방법 3 simple kalman filter
+    
+    # ''' params :
+    # A : 이전값을 통해 추정값을 예측할때 사용되는 행렬 
+    # P : 예측한 값에 대한 오차의 공분산
+    # Q : 시스템 노이즈  
+    # R : 측정값 노이즈 
+    # H : 예측값을 측정값으로 변환할때 사용되는 행렬  
+    # K : 칼만이득 => 추정치 - 오차공분산 
+    # '''
+
+    # # initial value 
+    # A= 1
+    # H= 1 
+    # Q= np.var(xs)
+    # R= np.var(xs)
+    # # initial estimate 
+    # x_0 = xs[0]
+    # y_0 = ys[0]
+    # P_0 = 1
+    # Kx_0 = 1
+    # Ky_0 = 1
+
+
+    # # z meas - >관측값 
+    # def kalman_filter(z_meas, x_esti, P):
+    # # (1) Prediction.
+    #     x_pred = A * x_esti
+    #     P_pred = A * P * A + Q
+
+    # # (2) Kalman Gain.
+    #     K = P_pred * H / (H * P_pred * H + R)
+
+    # # (3) Estimation.
+    #     x_esti = x_pred + K * (z_meas - H * x_pred)
+
+    # # (4) Error Covariance.
+    #     P = P_pred - K * H * P_pred
+
+    #     return x_esti, P, K
+
+    
+    # xs_new= [0]*len(xs)
+    # ys_new= [0]*len(ys)
+
+
+    # for idx,i in enumerate(xs_new):
+    #     if idx==0:
+    #         xs_new[idx], P , K= x_0,P_0 ,Kx_0
+    #     else:
+    #         xs_new[idx],P, K = kalman_filter(xs[idx],xs_new[idx-1],P)
+
+    # for idx, i in enumerate(ys_new):
+    #     if idx ==0 :
+    #         ys_new[idx],P,K = y_0,P_0,Ky_0
+    #     else:
+    #         ys_new[idx],P, K = kalman_filter(ys[idx],ys_new[idx-1],P)
+
+    # for rp, x, y in zip(rps, xs_new, ys_new):
+    #     rp.x = x
+    #     rp.y = y
+
+    # return rps
+
+
 
 
 def calculate_velocity(rps):
