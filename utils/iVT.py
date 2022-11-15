@@ -233,14 +233,10 @@ def noise_reduction(rps):
 
 
 def calculate_velocity(rps):
-    # Parameter : window length(baseline에는 아직 적용하지 않음)
-    """
-    :param rps: List<RawGazePoint>
-    :return: List<RawGazePoint>
-    Baseline으로 단순히 1step간의 차이를 속력으로 계산 및 업데이트
-    다만 이 속력 계산시 구간에 대한 parameter를 어떻게 적용하는지에 따라서 달라질 것 같은데
-    해당 내용은 완벽히 숙지한 것은 아니에요..! 그래서 구현하실 때 해당 파트 디테일하게 보고 적용해도 될 것 같습니다.
-    """
+    #Input= rps: rps에서 x좌표 y좌표, timestamp 사용
+    #Parameter : window length(=2)
+    #Output= 기존의 rps에 수정된 velocity 적용, 단 앞 뒤로 비는 부분은 인접 velocity로 적용 
+
 
     window_len = params.window_len
 
@@ -250,17 +246,21 @@ def calculate_velocity(rps):
 
     delta_time = get_delta(times, window_len)
     delta_x = get_delta(xs, window_len)
-    # TODO: 이렇게 하면 delta_x==0 인 경우 존재해서 일단 그런 경우는 1로 처리하게 놔둠... 이것도 바꿔야함.
-    delta_x[delta_x == 0] = 1
+    delta_y = get_delta(ys, window_len)    
+    distances=pow(pow(delta_x,2)+pow(delta_y,2),1/2)
+    speeds = np.abs(distances / delta_time)
 
-    delta_y = get_delta(ys, window_len)
-    # NOTE: 그런데, 여기서 속력이 아니라 속도를 구한다면..?!
-    speeds = np.abs(delta_y / delta_x)
-    # NA 값 처리
-    # TODO: 어떻게 값을 처리할지 정해야 함. 시간 계산을 하게 되면 window_len 만큼 값이 비게 된다!
-    #   현재는 0으로 채우는 상태
-    speeds = np.append(speeds, [0]*(len(rps)-len(speeds)))
-    assert len(speeds) == len(rps), "속도 계산 시 null 값을 처리해주세요!"
+
+  
+    diff=len(rps)-len(speeds) #2(L-1) window size<<data size란 가정 아래
+    first_value=speeds[0]
+
+    for n in range(int(diff/2)):
+        speeds = np.insert(speeds,0,first_value)
+    speeds = np.append(speeds, [speeds[-1]]*(len(rps)-len(speeds)))
+
+    #window length가 2가 아닐 때를 대비하여 범용성 있게 작성했습니다.
+    #window length가 2인 경우, np.append(speeds,speeds[-1])과 동일한 코드가 됩니다.
 
     # 각 point에 대해 속력값 업데이트
     for rp, speed in zip(rps, speeds):
