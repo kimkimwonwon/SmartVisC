@@ -265,7 +265,7 @@ def get_rf(rps):
 
     rps = noise_reduction(rps)
     rps = calculate_velocity(rps)
-    rps = absolute_threshold(rps)
+    rps = ivt_classifier(rps)
     rps = merge_adj_fixation(rps)
     rfs = discard_short_fixation(rps)
     return rfs
