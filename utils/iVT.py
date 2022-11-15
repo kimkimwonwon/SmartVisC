@@ -135,8 +135,10 @@ def ivt_classifier(rps):
     # Parameter : Velocity Threshold
     """
     :param rps: List<RawGazePoint>
-    :return: List<RawGBazePoint>
-    Baseline으로 단순히 해당 threshold를 넘으면 saccade 아래면 fixation으로 설정
+    :return: List<RawFixation>
+    velocity threshold를 넘으면 saccade 아래면 fixation으로 설정
+    saccade인 순간 해당 gaze point를 현재 fixation에 넣고, 다음 gaze point부터는 다음 fixation group에 들어가도록 fix_group_id 최신화
+    fixation인 순간 해당 gaze point를 현재 fixation에 포함
     """
 
     velocity_threshold = params.velocity_threshold
@@ -147,7 +149,6 @@ def ivt_classifier(rps):
     for rp in rps[:-1]:
         if rp.speed > velocity_threshold:
             setattr(rp, "label", "saccade")
-    #         print('saccade')
             rp.fix_group_id = fix_group_id
             fix_groups[fix_group_id]["x"].append(rp.x)
             fix_groups[fix_group_id]["y"].append(rp.y)
@@ -155,7 +156,6 @@ def ivt_classifier(rps):
             fix_group_id += 1
         else:
             setattr(rp, "label", "fixation")
-    #         print('fixation')
             rp.fix_group_id = fix_group_id
             fix_groups[fix_group_id]["x"].append(rp.x)
             fix_groups[fix_group_id]["y"].append(rp.y)
