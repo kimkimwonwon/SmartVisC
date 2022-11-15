@@ -131,19 +131,46 @@ def calculate_velocity(rps):
     return rps
 
 
-def absolute_threshold(rps):
+def ivt_classifier(rps):
     # Parameter : Velocity Threshold
     """
     :param rps: List<RawGazePoint>
     :return: List<RawGBazePoint>
     Baseline으로 단순히 해당 threshold를 넘으면 saccade 아래면 fixation으로 설정
     """
-    for rp in rps:
-        if rp.speed > params.velocity_threshold:
+
+    velocity_threshold = params.velocity_threshold
+
+    fix_groups = defaultdict(lambda: defaultdict(list))
+    fix_group_id = 0
+
+    for rp in rps[:-1]:
+        if rp.speed > velocity_threshold:
             setattr(rp, "label", "saccade")
+    #         print('saccade')
+            rp.fix_group_id = fix_group_id
+            fix_groups[fix_group_id]["x"].append(rp.x)
+            fix_groups[fix_group_id]["y"].append(rp.y)
+            fix_groups[fix_group_id]["timestamp"].append(rp.timestamp)
+            fix_group_id += 1
         else:
             setattr(rp, "label", "fixation")
-    return rps
+    #         print('fixation')
+            rp.fix_group_id = fix_group_id
+            fix_groups[fix_group_id]["x"].append(rp.x)
+            fix_groups[fix_group_id]["y"].append(rp.y)
+            fix_groups[fix_group_id]["timestamp"].append(rp.timestamp)
+
+    rf_inputs = list(map(lambda fix_group : {
+        "x" : np.median(fix_group["x"]),
+        "y" : np.median(fix_group["y"]),
+        "timestamp" : np.max(fix_group["timestamp"]),
+        "duration" : np.max(fix_group["timestamp"]) - np.min(fix_group["timestamp"])
+    }, fix_groups.values()))
+
+    rfs = [RawFixation(rf_input) for rf_input in rf_inputs]
+
+    return rfs
 
 
 def merge_adj_fixation(rps):
