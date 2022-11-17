@@ -63,7 +63,7 @@ def time_correction(rps):
     dup = []
     just_error = []
 
-    for i in range(1, len(time)-1):
+    for i in range(1, len(time)):
         if time[i] == time[i-1]:
             dup.append(i-1)
             dup.append(i)
@@ -104,6 +104,10 @@ def time_correction(rps):
                     just_error.append(duplication)
 
             dup = []
+            
+    if len(time) != 0:
+        if time[(len(time)-1)]==time[(len(time)-2)]:
+            just_error.append(len(time)-1)
 
     for error in just_error[::-1]:
         # 뒤에서부터 제거해야 안정적으로 index에 맞춰 제거 가능
