@@ -32,7 +32,7 @@ class DataHandler:
                     num_excluded += 1
         else:
             dat_list = [dat_list]
-        if ~is_sample:
+        if not is_sample:
             self.meta["status"] = "load"
             self.meta["dsrc"] = "raw"
             print("Every data has been loaded!")
