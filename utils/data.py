@@ -1,3 +1,6 @@
+import utils.const as const
+
+
 class WordBox:
     def __init__(self, raw: dict):
         self.height = raw["height"]
@@ -104,6 +107,10 @@ class Visc:
         self.rawGazePointList = [RawGazePoint(i) for i in raw['rawGazePoint']]
         self.rawFixationList = None
         self.correctedFixationList = [CorrectedFixation(i) for i in raw['correctedFixation']]
+
+        # ver.1.1 : 스크린 크기를 기록하는 부분입니다.
+        const.screen_height = self.device_info['screenResolution']['height']
+        const.screen_width = self.device_info['screenResolution']['width']
 
     def __str__(self):
         name = f"oid_{self.idx}"
