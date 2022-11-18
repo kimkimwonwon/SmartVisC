@@ -3,8 +3,9 @@ class WordBox:
         self.height = raw["height"]
         self.width = raw["width"]
         # ver.0.2 : 단어 중심이 오도록 정렬
-        self.x = raw["x"] + self.height/2
-        self.y = raw["y"] + self.width/2
+        # ver.1.1 : 오히려 단어 정렬하는 과정에서 단어들이 잘못 정렬되어서 버려야함.
+        self.x = raw["x"]
+        self.y = raw["y"]
 
     def __str__(self):
         return f"X{self.x}_Y{self.y}_H{self.height}_W{self.width}"
@@ -12,11 +13,13 @@ class WordBox:
 
 class WordAoi:
     def __init__(self, raw: dict):
-        self.idx_visc = raw['_id']["$oid"]
+        self.idx = raw['_id']["$oid"]
         self.line = raw['line'] - 1
         self.word = raw['word']
         self.order = raw['order'] - 1
-        self.wordBox = WordBox(raw['wordBox'])        
+        self.wordBox = WordBox(raw['wordBox'])
+        # ver.1.1 : 해당 단어의 개수도 파악
+        self.word_cnt = len(self.word)
 
     def __str__(self):
         return f"{self.word}_line{self.line}_order{self.order}"
@@ -69,39 +72,37 @@ class TextMetaData:
             setattr(self, k, v)
 
 
+class BoundaryPoint:
+    def __init__(self, raw: dict):
+        self.target = raw['target']
+        self.gaze = raw['gaze']
+        self.idx = raw["_id"]["$oid"]
+
+
 class Visc:
     """
     Current structure has potential OOM problem
-
     """
     def __init__(self, raw: dict):
         self.idx = raw['_id']["$oid"]
         self.screenResolution = raw['deviceInformation']['screenResolution']
 
-        # NOTE: sample.json에는 있지만 ivt-sample-data.json에는 없는 것들
-        # 다만 level은 향후 metric에 필요할 것으로 판단
-        # self.age = raw['age']
-        # self.gender = raw['gender']
-        # self.level = raw['level']
-        self.level = None
-        
+        # ver.1.1 : 현재 raw 데이터에 있지만 iVT, LineAllo에 무관했던 데이터들 중에서, 추후 metric에 필요해 보이는 데이터를 활성화했습니다
+        self.age = raw['age']
+        self.gender = raw['gender']
+        self.level = raw['level']
+        self.title = raw['title']
+        self.device_info = raw["deviceInformation"]
+        self.text_meta = TextMetaData(raw["textMetadata"])
+
+        self.boundaryPoints = [BoundaryPoint(i) for i in raw["boundaryPoint"]]
+        # ver.1.1: 우선 데이터가 다 존재한다고 가정해서 업데이트함!
+        self.wordAoiList = [WordAoi(i) for i in raw['wordAoi']]
+
         self.rawGazePointList = [RawGazePoint(i) for i in raw['rawGazePoint']]
-        # TODO: 원래 있는 것으로 되어있었는데 현재 ivt-sample-data.json 에 없는 상태!! 수정 필요
-        if "wordAoi" in list(raw.keys()):
-            self.wordAoiList = [WordAoi(i) for i in raw['wordAoi']]
-        else:
-            self.wordAoiList = None
-
         self.rawFixationList = None
-        self.correctedFixationList = None
-
-        # NOTE: sample data인 경우에는 sample 데이터에 처리된 결과를 가지도록
-        if "rawFixation" in list(raw.keys()):
-            self.rawFixationList = [RawFixation(i) for i in raw['rawFixation']]
-        if "correctedFixation" in list(raw.keys()):
-            self.correctedFixationList = [CorrectedFixation(i) for i in raw['correctedFixation']]
+        self.correctedFixationList = [CorrectedFixation(i) for i in raw['correctedFixation']]
 
     def __str__(self):
         name = f"oid_{self.idx}"
         return name
-

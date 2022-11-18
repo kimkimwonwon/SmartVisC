@@ -59,9 +59,8 @@ def classify_backward(rfs: list):
             rf.ftype = "Forward Reading"
             fr_count += 1
         else:
-            if i == 0:
-                pass
-            seg_id += 1
+            if i != 0:
+                seg_id += 1
         rf.segment_id = seg_id
     if env.LOG_ALL:
         fr_type_count = len([i for i, rf in enumerate(rfs) if rf.ftype == "Forward Reading"])
