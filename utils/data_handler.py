@@ -37,6 +37,8 @@ class DataHandler:
             self.meta["dsrc"] = "raw"
             print("Every data has been loaded!")
         else:
+            if self.sample_id > len(dat_list)-1:
+                self.sample_id = len(dat_list) -1
             dat_list = [dat_list[self.sample_id]]
             self.meta["status"] = "DONE"
             self.meta["dsrc"] = "sample"

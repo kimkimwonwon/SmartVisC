@@ -72,6 +72,7 @@ class TextMetaData:
             setattr(self, k, v)
 
 
+# ver.1.1 : 새로 추가된 데이터용 class입니다.
 class BoundaryPoint:
     def __init__(self, raw: dict):
         self.target = raw['target']
@@ -95,8 +96,9 @@ class Visc:
         self.device_info = raw["deviceInformation"]
         self.text_meta = TextMetaData(raw["textMetadata"])
 
+        # ver.1.1: 새로 추가된 데이터로, calibration 에 관련된 정보를 담고 있습니다.
         self.boundaryPoints = [BoundaryPoint(i) for i in raw["boundaryPoint"]]
-        # ver.1.1: 우선 데이터가 다 존재한다고 가정해서 업데이트함!
+        # ver.1.1: wordAoi는 우선 데이터가 다 존재한다고 가정해서 업데이트했습니다.
         self.wordAoiList = [WordAoi(i) for i in raw['wordAoi']]
 
         self.rawGazePointList = [RawGazePoint(i) for i in raw['rawGazePoint']]
