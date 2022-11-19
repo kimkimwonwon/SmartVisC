@@ -18,6 +18,10 @@ def plot_points(ax, points, title="", c="black", s=10, alpha=0.5, is_save=False,
         assert fig is not None, f"To save snapshot, fig argument is needed!"
         os.makedirs(f"figure/snapshot", exist_ok=True)
         ax.set_title(title)
+        if type(s) != list:
+            s = [s]*len(xs)
+        else:
+            assert len(xs) == len(s), f"Lengths of size list and point list are different!"
         prog = tqdm(enumerate(zip(xs, ys, s)))
         for i, (x, y, size) in prog:
             ax.scatter(x=x, y=y, s=size, c=c, alpha=alpha)
