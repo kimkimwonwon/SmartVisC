@@ -65,6 +65,7 @@ class CorrectedFixation:
         self.duration = raw['duration']
         self.x = raw['x']
         self.y = raw['y']
+        self.ftype = None
 
     def __str__(self):
         return f"Timestamp{self.timestamp}_line{self.line}_order{self.order}"
