@@ -51,6 +51,7 @@ class RawFixation:
         self.segment_id = None
         self.line_id = None
         self.order_id = None
+        self.ignore = False
 
     def __str__(self):
         return f"Timestamp{self.timestamp}_X{self.x}_Y{self.y}"

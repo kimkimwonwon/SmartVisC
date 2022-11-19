@@ -88,7 +88,7 @@ class DataHandler:
         return self.data[self.sample_id].rawGazePointList
 
     def get_sample_rf(self):
-        return self.data[self.sample_id].rawFixationList
+        return [i for i in self.data[self.sample_id].rawFixationList if not i.ignore]
 
     def get_sample_cf(self):
         return self.data[self.sample_id].correctedFixationList
