@@ -68,5 +68,5 @@ def show_line_plot_compare(before, after, title):
 def plot_text(ax, word_aoi):
     for word_aoi_i in word_aoi:
         word_box = word_aoi_i.wordBox
-        ax.text(word_box.x, word_box.y, word_aoi_i.word, fontdict={"fontsize": const.font_size})
+        ax.text(word_box.x, word_box.y, word_aoi_i.word)
 
