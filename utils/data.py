@@ -114,6 +114,7 @@ class Visc:
         const.screen_height = self.device_info['screenResolution']['height']
         const.screen_width = self.device_info['screenResolution']['width']
         const.font_size = raw["textMetadata"]["fontSize"]
+        const.text_dict[self.title] = self.wordAoiList
 
     def __str__(self):
         name = f"oid_{self.idx}"
