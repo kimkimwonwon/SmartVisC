@@ -113,6 +113,7 @@ class Visc:
         # ver.1.1 : 스크린 크기를 기록하는 부분입니다.
         const.screen_height = self.device_info['screenResolution']['height']
         const.screen_width = self.device_info['screenResolution']['width']
+        const.font_size = raw["textMetadata"]["fontSize"]
 
     def __str__(self):
         name = f"oid_{self.idx}"

@@ -1,6 +1,7 @@
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 import os
+import utils.const as const
 
 
 def plot_points(ax, points, title="", c="black", s=10, alpha=0.5, is_save=False, fig=None):
