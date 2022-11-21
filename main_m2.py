@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from copy import deepcopy
 
 import env
-# from utils.metric import get_lineAllo_dashboard
+from utils.metric import get_lineAllo_dashboard, export_excel
 from utils.data_handler import DataHandler
 from utils.visual import set_scale, plot_points, plot_text, plot_lines
 
@@ -45,10 +45,10 @@ def compare_points(point_rf, point_cur, point_bm, word_aoi, resol):
     bm_dur = duration_scaling(bm_dur, 50)
     fig, ax = plt.subplots(1, 2, figsize=(20, 10))
     set_scale(resol, ax)
-    plot_points(ax[0], point_cur, c="blue", s=cur_dur, alpha=0.5)
+    # plot_points(ax[0], point_cur, c="blue", s=cur_dur, alpha=0.5)
     plot_points(ax[0], point_rf, "current", c="red", s=10, alpha=0.5)
     # plot_points(ax[0], point_rf, "current", c="red", s=10, alpha=0.5, is_save=True, fig=fig)
-    plot_lines(ax[0], point_cur)
+    # plot_lines(ax[0], point_cur)
     plot_points(ax[1], point_bm, "Benchmark", c="red", s=bm_dur, alpha=0.5)
     plot_lines(ax[1], point_bm)
 
@@ -75,6 +75,7 @@ def main():
 
     # Metric
     # db = get_lineAllo_dashboard(handler.get_sample_rp(), word_aoi, current_cf, bm_cf)
+    export_excel(current_cf)
 
 
 if __name__ == '__main__':

@@ -29,6 +29,8 @@ last_jump_y = 450 # max scan len
 
 peak_pad = 150
 peak_mv = 150
+peak_mv1 = 400
+peak_mv2 = 200
 
 use_cnst_bward_thr = True
 backward_threshold = -300

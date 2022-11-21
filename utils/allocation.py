@@ -106,7 +106,10 @@ def rm_noise(rfs):
     # Step 3: 마지막 줄 남기기
     delta = last_line[2:] - last_line[:-2]
     delta = np.concatenate((delta, np.zeros((2, 2))))
-    last_point_idx = np.argwhere(delta[:, 1] > last_jump_y)[0, 0]
+    if np.sum(delta[:, 1] > last_jump_y) == 0:
+        last_point_idx = len(delta) - 1
+    else:
+        last_point_idx = np.argwhere(delta[:, 1] > last_jump_y)[0, 0]
 
     for i in range(len(rfs)-len(last_line)+last_point_idx+1, len(rfs)):
         rm_idx.append(i)
@@ -188,6 +191,7 @@ def get_idx(word_aois):
                 idx[j].append(i)
     return idx
 
+
 # Get nC2 of line
 def get_idx_combo(word_aois):
     lsts = [i for i in range(word_aois[-1].line+1)]
@@ -195,11 +199,13 @@ def get_idx_combo(word_aois):
     combo = list(combinations(lsts, 2))
     return combo
 
+
 # Get mean of word_cnt
 def word_cnt_mean(word_aoi):
     word_cnt_lst = [word_aoi[i].word_cnt for i in range(len(word_aoi))]
     cnt_mean = sum(word_cnt_lst)/len(word_cnt_lst)
     return cnt_mean
+
 
 # When there are n words in a sentence, 
 # returns the length of n-1 words except the last word and the number of n-1 gaps
@@ -219,12 +225,13 @@ def letter_and_gap(word_aois, idx1, idx2):
     
     return let, gap
 
+
 # Get the length of a single word and the length of a gap
 # backward_threshold = mean of word_cnt * mean of single word lengths + mean of gap lengths
 # default: return backward_threshold
 # use_gap == True: return the mean of gaps
 def get_seg_thr(word_aois, use_params = False, use_thr = True, use_gap = False):
-    if use_params == True:
+    if use_params:
         return params.backward_threshold
     else:
         let = []
@@ -243,11 +250,12 @@ def get_seg_thr(word_aois, use_params = False, use_thr = True, use_gap = False):
         gap_threshold = np.mean(thr[:,1])
         backward_threshold = -(cnt_mean*(np.mean(thr[:,0])) + np.mean(thr[:,1]))
         
-        if use_gap == True:
+        if use_gap:
             return gap_threshold
         else:
             return backward_threshold
         # assert False, "아직 함수를 구현하지 않았습니다!"
+
 
 # ver.1.1: backward movement 감지
 def classify_backward(rfs: list, word_aois):
@@ -307,7 +315,8 @@ def classify_backward(rfs: list, word_aois):
 
 def rm_peak(rfs: list, word_aois):
     rm_idx = []
-    peak_mv = params.peak_mv
+    peak_mv1 = params.peak_mv1
+    peak_mv2 = params.peak_mv2
     peak_pad = params.peak_pad
 
     # Step 1: 텍스트의 영역 + pad의 공간 밖의 점들은 무시
@@ -323,8 +332,14 @@ def rm_peak(rfs: list, word_aois):
     coors = get_coors(rfs)
     delta = coors[1:] - coors[:-1]
     delta = np.concatenate((np.zeros((1, 2)), delta))
-    for i, (delta_i, rf) in enumerate(zip(delta, rfs)):
-        if (i != len(rfs)-1) and (np.abs(delta_i[1]) > peak_mv) and (np.abs(delta[i+1][1]) > peak_mv):
+    distance = np.sqrt(delta[:, 1]**2+delta[:, 0]**2)
+
+    delta_2 = delta[1:] - delta[:-1]
+    delta_2 = np.concatenate((np.zeros((1, 2)), delta_2))
+    distance_2 = np.sqrt(delta_2[:, 1] ** 2 + delta_2[:, 0] ** 2)
+
+    for i, (delta_i, distance_i, distance2_i, rf) in enumerate(zip(delta, distance, distance_2, rfs)):
+        if (i != len(rfs)-2) and (np.abs(delta_i[1]) > peak_mv1) and (distance2_i < peak_mv2):
             rm_idx.append(i)
     res = [rf for i, rf in enumerate(rfs) if i not in set(rm_idx)]
     return res
@@ -350,9 +365,11 @@ def allocate_line_id(rfs, word_aois):
         line_ys[word_aoi.line] = word_aoi.wordBox.y
     line_ys = np.array(line_ys)[:, np.newaxis]
 
-    segment_ys = [None] * (rfs[-1].segment_id+1)
+    segment_ys = defaultdict(list)
+    # segment_ys = [None] * (rfs[-1].segment_id+1)
     for rf in rfs:
-        segment_ys[rf.segment_id] = rf.y
+        segment_ys[rf.segment_id].append(rf.y)
+    segment_ys = [i[0] for i in list(segment_ys.values())]
     segment_ys = np.array(segment_ys)[:, np.newaxis]
 
     distances = pairwise_distances(segment_ys, line_ys)
@@ -441,78 +458,6 @@ def to_CorrectedFixation(rfs, word_aois):
     return cfs
 
 
-# Deprecated
-def allocate_line(rfs, word_aoi):
-    # Parameter : Backward Threshold
-    """
-    :param rfs: List<RawFixation> Raw Fixation
-    :param word_aoi: List<WordAoi> wordAOI
-    :return: List<CorrectedFixation> Corrected Fixation
-
-    RawFixation들의 x축의 변화량을 보고 기준치(Backward Threshold)를 넘은 경우에
-    다음 id를 할당하는 방식으로 구현되어 있습니다.
-
-    아직 WordAoi를 이용해서 단어별 할당하는 코드는 구현되어 있지 않습니다.
-    그리고 아래의 코드는 단순히 구현한거라 이제 제대로 구현해보면 되는 내용입니다...!
-
-    해당 과정에서 Corrected Fixation을 만들어야 하는데 필요한 값은
-    (x, y, timestamp, line, order)이며 line은 몇번째 줄인지, order는 그 line 내에서 몇번째 fixation인지
-    알려주는 것입니다.
-    """
-    xs = np.array([i.x for i in rfs])
-    backward_threshold = params.backward_threshold
-
-    delta_x = np.lib.stride_tricks.sliding_window_view(xs, 2, writeable=True)
-    delta_x = delta_x[:, 1] - delta_x[:, 0]
-
-    # Line allocation: Backward
-    # 기준치를 넘은 경우에 1씩 라벨링 하고, 누적합을 구하게 되면, step function처럼 다음 값들이 동일한 id를 가지게 되어서
-    # grouping이 가능하게 됩니다!
-    line_idx = np.zeros_like(delta_x)
-    line_idx[delta_x < backward_threshold] = 1
-
-    line_idx = line_idx.cumsum().astype(int)
-    if line_idx[0] == 0:
-        line_idx += 1
-
-    # 몇번재 라인인지 각 Raw Fixation에 라벨링
-    line_idx = np.append(line_idx, line_idx[-1])
-    for rf, group_id in zip(rfs, line_idx):
-        setattr(rf, "line_group_id", group_id)
-
-    # line 라벨에 따라서 동일한 line_id를 가지는 경우에는 y축 값이 그 group의 median을 가지도록.
-    line_groups = defaultdict(lambda: defaultdict(list))
-    for rf in rfs:
-        line_groups[rf.line_group_id]["y"].append(rf.y)
-    line_groups = list(map(lambda v: np.median(v['y']), line_groups.values()))
-
-    # 각 줄에서 순서대로 order값을 할당해주고 줄이 바뀌는 경우에는 order는 0이 되도록 합니다.
-    # 줄이 바뀐지 알기 위해서 line_count 변수를 이용해서 안바뀌면 다음 order 값을, 바뀐 경우에는 order를 0부터 다시 시작하도록 합니다.
-    cfs = []
-    line_count = 1
-    order_count = 1
-    for i, (rf, line_id) in enumerate(zip(rfs, line_idx)):
-        if line_count == line_id:
-            order_count += 1
-            order = order_count
-        else:
-            order_count = 0
-            order = order_count
-            line_count += 1
-        try:
-            cf_input = {
-                "timestamp": rf.timestamp,
-                "line": line_id,
-                "order": order,
-                "x": rf.x,
-                "y": line_groups[line_id-1]
-            }
-        except :
-            print()
-        cfs.append(CorrectedFixation(cf_input))
-    return cfs
-
-
 def run(rfs, word_aois):
     # 전처리(TBD)
     rfs = rm_noise(rfs)
@@ -536,3 +481,74 @@ def run(rfs, word_aois):
             ftype_status[cf.ftype] += 1
         print(ftype_status)
     return cfs
+
+# # Deprecated
+# def allocate_line(rfs, word_aoi):
+#     # Parameter : Backward Threshold
+#     """
+#     :param rfs: List<RawFixation> Raw Fixation
+#     :param word_aoi: List<WordAoi> wordAOI
+#     :return: List<CorrectedFixation> Corrected Fixation
+#
+#     RawFixation들의 x축의 변화량을 보고 기준치(Backward Threshold)를 넘은 경우에
+#     다음 id를 할당하는 방식으로 구현되어 있습니다.
+#
+#     아직 WordAoi를 이용해서 단어별 할당하는 코드는 구현되어 있지 않습니다.
+#     그리고 아래의 코드는 단순히 구현한거라 이제 제대로 구현해보면 되는 내용입니다...!
+#
+#     해당 과정에서 Corrected Fixation을 만들어야 하는데 필요한 값은
+#     (x, y, timestamp, line, order)이며 line은 몇번째 줄인지, order는 그 line 내에서 몇번째 fixation인지
+#     알려주는 것입니다.
+#     """
+#     xs = np.array([i.x for i in rfs])
+#     backward_threshold = params.backward_threshold
+#
+#     delta_x = np.lib.stride_tricks.sliding_window_view(xs, 2, writeable=True)
+#     delta_x = delta_x[:, 1] - delta_x[:, 0]
+#
+#     # Line allocation: Backward
+#     # 기준치를 넘은 경우에 1씩 라벨링 하고, 누적합을 구하게 되면, step function처럼 다음 값들이 동일한 id를 가지게 되어서
+#     # grouping이 가능하게 됩니다!
+#     line_idx = np.zeros_like(delta_x)
+#     line_idx[delta_x < backward_threshold] = 1
+#
+#     line_idx = line_idx.cumsum().astype(int)
+#     if line_idx[0] == 0:
+#         line_idx += 1
+#
+#     # 몇번재 라인인지 각 Raw Fixation에 라벨링
+#     line_idx = np.append(line_idx, line_idx[-1])
+#     for rf, group_id in zip(rfs, line_idx):
+#         setattr(rf, "line_group_id", group_id)
+#
+#     # line 라벨에 따라서 동일한 line_id를 가지는 경우에는 y축 값이 그 group의 median을 가지도록.
+#     line_groups = defaultdict(lambda: defaultdict(list))
+#     for rf in rfs:
+#         line_groups[rf.line_group_id]["y"].append(rf.y)
+#     line_groups = list(map(lambda v: np.median(v['y']), line_groups.values()))
+#
+#     # 각 줄에서 순서대로 order값을 할당해주고 줄이 바뀌는 경우에는 order는 0이 되도록 합니다.
+#     # 줄이 바뀐지 알기 위해서 line_count 변수를 이용해서 안바뀌면 다음 order 값을, 바뀐 경우에는 order를 0부터 다시 시작하도록 합니다.
+#     cfs = []
+#     line_count = 1
+#     order_count = 1
+#     for i, (rf, line_id) in enumerate(zip(rfs, line_idx)):
+#         if line_count == line_id:
+#             order_count += 1
+#             order = order_count
+#         else:
+#             order_count = 0
+#             order = order_count
+#             line_count += 1
+#         try:
+#             cf_input = {
+#                 "timestamp": rf.timestamp,
+#                 "line": line_id,
+#                 "order": order,
+#                 "x": rf.x,
+#                 "y": line_groups[line_id-1]
+#             }
+#         except :
+#             print()
+#         cfs.append(CorrectedFixation(cf_input))
+#     return cfs
