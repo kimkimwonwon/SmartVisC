@@ -106,7 +106,10 @@ def rm_noise(rfs):
     # Step 3: 마지막 줄 남기기
     delta = last_line[2:] - last_line[:-2]
     delta = np.concatenate((delta, np.zeros((2, 2))))
-    last_point_idx = np.argwhere(delta[:, 1] > last_jump_y)[0, 0]
+    if np.sum(delta[:, 1] > last_jump_y) == 0:
+        last_point_idx = len(delta) - 1
+    else:
+        last_point_idx = np.argwhere(delta[:, 1] > last_jump_y)[0, 0]
 
     for i in range(len(rfs)-len(last_line)+last_point_idx+1, len(rfs)):
         rm_idx.append(i)
@@ -362,9 +365,11 @@ def allocate_line_id(rfs, word_aois):
         line_ys[word_aoi.line] = word_aoi.wordBox.y
     line_ys = np.array(line_ys)[:, np.newaxis]
 
-    segment_ys = [None] * (rfs[-1].segment_id+1)
+    segment_ys = defaultdict(list)
+    # segment_ys = [None] * (rfs[-1].segment_id+1)
     for rf in rfs:
-        segment_ys[rf.segment_id] = rf.y
+        segment_ys[rf.segment_id].append(rf.y)
+    segment_ys = [i[0] for i in list(segment_ys.values())]
     segment_ys = np.array(segment_ys)[:, np.newaxis]
 
     distances = pairwise_distances(segment_ys, line_ys)
