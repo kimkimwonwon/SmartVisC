@@ -28,6 +28,7 @@ import params
 import env
 from sklearn.metrics import pairwise_distances
 import utils.const as const
+from itertools import combinations
 
 
 def get_time(obj: list):
@@ -176,22 +177,87 @@ def get_offset(rfs, word_aois):
         rf.y -= np.min(coors[:, 1]) - min(text_y)
     return rfs
 
-
+# else 부분 : thr 구하는 함수 구현 
 def get_seg_thr():
     if params.use_cnst_bward_thr:
         return params.backward_threshold
     else:
+        
         assert False, "아직 함수를 구현하지 않았습니다!"
 
+# get index per line
+def get_idx(word_aois):
+    idx = defaultdict(list)
+    
+    for j in range(word_aois[-1].line):
+        for i in range (len(word_aois)):
+            if word_aois[i].line == j:
+                idx[j].append(i)
+    return idx
 
-# ver.0.1: backward movement 감지 (hyper parameter issue)
-def classify_backward(rfs: list):
+# Get nC2 of line
+def get_idx_combo(word_aois):
+    lsts = [i for i in range(word_aois[-1].line)]
+
+    combo = list(combinations(lsts, 2))
+    return combo
+
+# Get mean of word_cnt
+def word_cnt_mean(word_aoi):
+    word_cnt_lst = [word_aoi[i].word_cnt for i in range(len(word_aoi))]
+    cnt_mean = sum(word_cnt_lst)/len(word_cnt_lst)
+    return cnt_mean
+
+# When there are n words in a sentence, 
+# returns the length of n-1 words except the last word and the number of n-1 gaps
+def letter_and_gap(word_aois, idx1, idx2):
+    # line 0: 단어 개수(마지막 단어 제외), 띄어쓰기 개수
+    word_cnt_1 = sum([(word_aois[idx1[i]].word_cnt)-1 for i in range(len(idx1)-1)]) 
+    space_cnt_1 = len(idx1)-2
+    # line 1: 단어 개수(마지막 단어 제외), 띄어쓰기 개수
+    word_cnt_2 = sum([(word_aois[idx2[i]].word_cnt)-1 for i in range(len(idx2)-1)])
+    space_cnt_2 = len(idx2)-2
+    # line 길이
+    len_1 = word_aois[idx1[-1]].wordBox.x-word_aois[idx1[0]].wordBox.x
+    len_2 = word_aois[idx2[-1]].wordBox.x-word_aois[idx2[0]].wordBox.x
+            
+    let = np.array([[word_cnt_1, space_cnt_1],[word_cnt_2, space_cnt_2]])
+    gap = np.array([len_1, len_2])
+    
+    return let, gap
+
+# Get the length of a single word and the length of a gap
+# backward_threshold = mean of word_cnt * length of a single word + length of a gap
+def get_seg_thr(word_aois, use_params = False):
+    if use_params == True:
+        return params.backward_threshold
+    else:
+        let = []
+        gap = []
+        idx = get_idx(word_aois)
+        cnt_mean = word_cnt_mean(word_aois)
+
+        for i,j in get_idx_combo(word_aois):
+            result = letter_and_gap(word_aois, idx[i], idx[j])
+            if np.linalg.det(result[0]) != 0 :
+                let.append(result[0])
+                gap.append(result[1])
+            else : pass
+        thr = np.linalg.solve(let, gap)
+        thr = np.where((thr > 0) & (thr < const.font_size), thr, 0)
+        backward_threshold = -(cnt_mean*(np.mean(thr[:,0])) + np.mean(thr[:,1])) 
+        
+        return backward_threshold
+        # assert False, "아직 함수를 구현하지 않았습니다!"
+
+# ver.1.1: backward movement 감지
+def classify_backward(rfs: list, word_aois):
     xs = np.array([rf.x for rf in rfs])
     delta_xs = xs[:-1] - xs[1:]
     delta_xs = np.concatenate((delta_xs, [0]))
 
     # NOTE: hyper parameter
-    bward_thr = get_seg_thr()
+    bward_thr = get_seg_thr(word_aois)
     is_bwards = delta_xs < bward_thr
 
     fr_count = 0
@@ -210,6 +276,34 @@ def classify_backward(rfs: list):
         assert fr_count == fr_type_count, "Forward Reading 배정이 잘못되었습니다!"
         print(f"Backward Number : {len(rfs)-fr_count}/{len(rfs)}")
     return rfs
+
+
+# # ver.0.1: backward movement 감지 (hyper parameter issue)
+# def classify_backward(rfs: list):
+#     xs = np.array([rf.x for rf in rfs])
+#     delta_xs = xs[:-1] - xs[1:]
+#     delta_xs = np.concatenate((delta_xs, [0]))
+
+#     # NOTE: hyper parameter
+#     bward_thr = get_seg_thr()
+#     is_bwards = delta_xs < bward_thr
+
+#     fr_count = 0
+#     seg_id = 0
+#     for i, (rf, is_bward) in enumerate(zip(rfs, is_bwards)):
+#         rf.is_backward = is_bward
+#         if ~ is_bward:
+#             rf.ftype = "Forward Reading"
+#             fr_count += 1
+#         else:
+#             if i != 0:
+#                 seg_id += 1
+#         rf.segment_id = seg_id
+#     if env.LOG_ALL:
+#         fr_type_count = len([i for i, rf in enumerate(rfs) if rf.ftype == "Forward Reading"])
+#         assert fr_count == fr_type_count, "Forward Reading 배정이 잘못되었습니다!"
+#         print(f"Backward Number : {len(rfs)-fr_count}/{len(rfs)}")
+#     return rfs
 
 
 def rm_peak(rfs: list, word_aois):
@@ -429,7 +523,7 @@ def run(rfs, word_aois):
     # rfs = flatten_segment(rfs)
 
     # 작은 segment로 나누기
-    rfs = classify_backward(rfs)
+    rfs = classify_backward(rfs, word_aois)
 
     # 후처리(TBD)
     rfs = allocate_line_id(rfs, word_aois)
