@@ -238,10 +238,7 @@ def noise_reduction(rps):
     #     rp.x = x
     #     rp.y = y
 
-    # # NOTE: ver.0.1: noise reduction 효과에 따라 시계열 그림으로 나타냄.
-    # if env.SHOW_ALL_PLOTS:
-    #     show_line_plot_compare(xs, xs_new, f"Noise Reduction, X with window size = {window_size}")
-    #     show_line_plot_compare(ys, ys_new, f"Noise Reduction, Y with window size = {window_size}")
+    
     # 방법 2 : Exponential smoothing
     # t 시점의 actual 관측치 * alpha + t-1 예측값 *( 1-alpha)
 
@@ -262,6 +259,11 @@ def noise_reduction(rps):
     for rp, x, y in zip(rps, xs_new, ys_new):
         rp.x = x
         rp.y = y
+
+    # NOTE: ver.0.1: noise reduction 효과에 따라 시계열 그림으로 나타냄.
+    if env.SHOW_ALL_PLOTS:
+        show_line_plot_compare(xs, xs_new, f"Noise Reduction X")
+        show_line_plot_compare(ys, ys_new, f"Noise Reduction Y")
 
     return rps
 
@@ -350,6 +352,7 @@ def calculate_velocity(rps):
     for n in range(int(diff/2)):
         speeds = np.insert(speeds, 0, first_value)
     speeds = np.append(speeds, [speeds[-1]]*(len(rps)-len(speeds)))
+    # speeds = np.append(speeds, [0]*(len(rps)-len(speeds)))
 
     # window length가 2가 아닐 때를 대비하여 범용성 있게 작성했습니다.
     # window length가 2인 경우, np.append(speeds,speeds[-1])과 동일한 코드가 됩니다.
@@ -399,13 +402,41 @@ def ivt_classifier(rps):
             fix_groups[fix_group_id]["y"].append(rp.y)
             fix_groups[fix_group_id]["timestamp"].append(rp.timestamp)
 
+    
+    # merge adjacent fixations
+    # params.py에 추가
+    merge_thr = params.merge_thr
+
+    dist_mat = pairwise_distances(np.concatenate([np.array([np.mean(i['x']) for i in fix_groups.values()]).reshape(-1, 1),
+                                                  np.array([np.mean(i['y']) for i in fix_groups.values()]).reshape(-1, 1)], axis = 1))
+
+    merge_fix_groups = defaultdict(lambda: defaultdict(list))
+    merge_fix_group_id = 0
+    idx = 0
+    while True:
+        if idx >= len(dist_mat):
+            break
+        dist = dist_mat[idx]
+        cnt = 0
+        for i, d in enumerate(dist[idx:]):
+            if d < merge_thr:
+                merge_fix_groups[merge_fix_group_id]["x"].extend(fix_groups[idx + i]["x"])
+                merge_fix_groups[merge_fix_group_id]["y"].extend(fix_groups[idx + i]["y"])
+                merge_fix_groups[merge_fix_group_id]["timestamp"].extend(fix_groups[idx]["timestamp"])
+                cnt += 1
+            else:
+                break
+        idx += cnt
+        merge_fix_group_id += 1
+
     rf_inputs = list(map(lambda fix_group: {
-        "x": np.median(fix_group["x"]),
-        "y": np.median(fix_group["y"]),
+        "x": np.mean(fix_group["x"]),
+        "y": np.mean(fix_group["y"]),
         "timestamp": np.max(fix_group["timestamp"]),
         "duration": np.max(fix_group["timestamp"]) - np.min(fix_group["timestamp"])
-    }, fix_groups.values()))
+    }, merge_fix_groups.values()))
 
+    # discard short fixations
     min_fix_duration = params.min_fix_duration
 
     rfs = [RawFixation(rf_input)
