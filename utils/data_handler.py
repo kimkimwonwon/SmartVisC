@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 
 class DataHandler:
-    def __init__(self, pr, is_sample=True):
+    def __init__(self, pr, is_sample=True, sample_id=0, dat_fn="343FullData.json"):
         self.path_root = pr
         self.path_data = f"{pr}/data/raw"
         self.meta = dict()
@@ -19,42 +19,32 @@ class DataHandler:
         self.num_fixation = 0
         self.num_saccade = 0
 
-        self.sample_id = 0
+        self.sample_id = sample_id
 
-        if is_sample:
-            with open(f"{pr}/data/sample.json", encoding="utf-8") as f:
-                dat_list = json.load(f)
-            f.close()
-            self.meta["status"] = "DONE"
-            self.meta["dsrc"] = "sample"
-            print("Sample data is loaded")
+        num_excluded = 0
+        with open(f"{self.path_data}/{dat_fn}", encoding="utf-8") as f:
+            dat_list = json.load(f)
+        f.close()
+        if type(dat_list) == list:
+            for i, tmp in enumerate(dat_list):
+                if len(tmp["rawGazePoint"]) == 0:
+                    dat_list.pop(i)
+                    num_excluded += 1
         else:
-            # TODO: Add data
-            # Assumption: RawGazePoint, TextMetaData, WordAOI were given
-            # Data Structure of dat:
-            #   - RawGazePoint
-            #   - TextMetaData
-            #   - WordAOI
-            dat_list = []
-            flist = glob.glob(f"{self.path_data}/*.json")
-            num_excluded = 0
-            for fn in flist:
-                # NOTE: 여기에선 사람마다 파일이 나눠져있다고 가정한 것이고, 한 파일에 다 저장된 형태라면
-                # 바로 datlist로 할당해버리면 됨
-                with open(f"{fn}", encoding="utf-8") as f:
-                    dat = json.load(f)
-                f.close()
-                # dat = [dat[30]]
-                if type(dat) == list:
-                    for i, tmp in enumerate(dat):
-                        if len(tmp["rawGazePoint"]) == 0:
-                            dat.pop(i)
-                            num_excluded += 1
-                    dat_list.extend(dat)
-                else:
-                    dat_list.append(dat)
+            dat_list = [dat_list]
+        if not is_sample:
             self.meta["status"] = "load"
             self.meta["dsrc"] = "raw"
+            print("Every data has been loaded!")
+        else:
+            if self.sample_id > len(dat_list)-1:
+                self.sample_id = len(dat_list) - 1
+            dat_list = [dat_list[self.sample_id]]
+            self.sample_id = 0
+            self.meta["status"] = "DONE"
+            self.meta["dsrc"] = "sample"
+            print(f"{self.sample_id}th data is loaded")
+
         print(f"Excluded data : {num_excluded}")
         self.data = [Visc(i) for i in dat_list]
 
@@ -98,7 +88,7 @@ class DataHandler:
         return self.data[self.sample_id].rawGazePointList
 
     def get_sample_rf(self):
-        return self.data[self.sample_id].rawFixationList
+        return [i for i in self.data[self.sample_id].rawFixationList if not i.ignore]
 
     def get_sample_cf(self):
         return self.data[self.sample_id].correctedFixationList
