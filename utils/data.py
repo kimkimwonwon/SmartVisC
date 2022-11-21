@@ -84,6 +84,12 @@ class BoundaryPoint:
         self.gaze = raw['gaze']
         self.idx = raw["_id"]["$oid"]
 
+    def get_target_coors(self):
+        return self.target['x'], self.target['y']
+
+    def get_gaze_coors(self):
+        return self.gaze['x'], self.gaze['y']
+
 
 class Visc:
     """

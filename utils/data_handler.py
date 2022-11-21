@@ -1,6 +1,7 @@
 import os
 import json
 from pprint import pprint
+import numpy as np
 
 from utils.data import Visc
 from utils import iVT
@@ -98,6 +99,14 @@ class DataHandler:
 
     def get_word_aoi(self):
         return self.data[self.sample_id].wordAoiList
+
+    def get_gaze_point_dist(self):
+        bpoints = self.data[self.sample_id].boundaryPoints
+        gazes = np.array([list(bpoint.get_gaze_coors()) for bpoint in bpoints])
+        targets = np.array([list(bpoint.get_target_coors()) for bpoint in bpoints])
+        bias = targets - gazes
+        bias = bias[:, 1]
+        return bias
 
 
 if __name__ == '__main__':
