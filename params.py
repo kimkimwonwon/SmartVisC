@@ -23,4 +23,14 @@ velocity_threshold = 1.5 # 3.1.5 마지막 문단의 값과 다른 값을 현재
 min_fix_duration = 60 # 3.1.7 참고
 
 # Line Allocation
+backward_ratio = 0.4
+line_min_fix_num = 8
+last_jump_y = 450 # max scan len
+
+peak_pad = 150
+peak_mv = 150
+peak_mv1 = 400
+peak_mv2 = 200
+
+use_cnst_bward_thr = True
 backward_threshold = -300

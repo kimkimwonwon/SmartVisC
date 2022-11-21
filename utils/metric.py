@@ -113,6 +113,15 @@ def get_lineAllo_dashboard(rps, word_aoi, point_cur, point_bm):
     return db
 
 
+def export_excel(cfs):
+    raw = []
+    for cf in cfs:
+        raw.append(cf.__dict__)
+    df = pd.DataFrame(raw)
+    print(df.head(10))
+    df.to_excel("data/result_line.xlsx")
+
+
 def eval_metric():
     """
     Description: compare traditional estimated value with our metric algorithm
