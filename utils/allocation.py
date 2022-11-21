@@ -365,9 +365,11 @@ def allocate_line_id(rfs, word_aois):
         line_ys[word_aoi.line] = word_aoi.wordBox.y
     line_ys = np.array(line_ys)[:, np.newaxis]
 
-    segment_ys = [None] * (rfs[-1].segment_id+1)
+    segment_ys = defaultdict(list)
+    # segment_ys = [None] * (rfs[-1].segment_id+1)
     for rf in rfs:
-        segment_ys[rf.segment_id] = rf.y
+        segment_ys[rf.segment_id].append(rf.y)
+    segment_ys = [i[0] for i in list(segment_ys.values())]
     segment_ys = np.array(segment_ys)[:, np.newaxis]
 
     distances = pairwise_distances(segment_ys, line_ys)
