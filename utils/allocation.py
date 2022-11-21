@@ -182,7 +182,7 @@ def get_offset(rfs, word_aois):
 def get_idx(word_aois):
     idx = defaultdict(list)
     
-    for j in range(word_aois[-1].line):
+    for j in range(word_aois[-1].line+1):
         for i in range (len(word_aois)):
             if word_aois[i].line == j:
                 idx[j].append(i)
@@ -190,7 +190,7 @@ def get_idx(word_aois):
 
 # Get nC2 of line
 def get_idx_combo(word_aois):
-    lsts = [i for i in range(word_aois[-1].line)]
+    lsts = [i for i in range(word_aois[-1].line+1)]
 
     combo = list(combinations(lsts, 2))
     return combo
