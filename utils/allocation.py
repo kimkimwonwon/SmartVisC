@@ -177,13 +177,6 @@ def get_offset(rfs, word_aois):
         rf.y -= np.min(coors[:, 1]) - min(text_y)
     return rfs
 
-# else 부분 : thr 구하는 함수 구현 
-def get_seg_thr():
-    if params.use_cnst_bward_thr:
-        return params.backward_threshold
-    else:
-        
-        assert False, "아직 함수를 구현하지 않았습니다!"
 
 # get index per line
 def get_idx(word_aois):
@@ -227,8 +220,10 @@ def letter_and_gap(word_aois, idx1, idx2):
     return let, gap
 
 # Get the length of a single word and the length of a gap
-# backward_threshold = mean of word_cnt * length of a single word + length of a gap
-def get_seg_thr(word_aois, use_params = False):
+# backward_threshold = mean of word_cnt * mean of single word lengths + mean of gap lengths
+# default: return backward_threshold
+# use_gap == True: return the mean of gaps
+def get_seg_thr(word_aois, use_params = False, use_thr = True, use_gap = False):
     if use_params == True:
         return params.backward_threshold
     else:
@@ -245,9 +240,13 @@ def get_seg_thr(word_aois, use_params = False):
             else : pass
         thr = np.linalg.solve(let, gap)
         thr = np.where((thr > 0) & (thr < const.font_size), thr, 0)
-        backward_threshold = -(cnt_mean*(np.mean(thr[:,0])) + np.mean(thr[:,1])) 
+        gap_threshold = np.mean(thr[:,1])
+        backward_threshold = -(cnt_mean*(np.mean(thr[:,0])) + np.mean(thr[:,1]))
         
-        return backward_threshold
+        if use_gap == True:
+            return gap_threshold
+        else:
+            return backward_threshold
         # assert False, "아직 함수를 구현하지 않았습니다!"
 
 # ver.1.1: backward movement 감지
