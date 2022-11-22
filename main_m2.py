@@ -2,6 +2,7 @@ import os
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 
 from copy import deepcopy
 
@@ -59,23 +60,27 @@ def compare_points(point_rf, point_cur, point_bm, word_aoi, resol):
 
 
 def main():
-    word_aoi = handler.get_word_aoi()
-    # Mission 1: iVT Filter
-    # 이건 이미 성공했다고 가정
-    handler.run_ivt()
-    # Mission 2: Line Allocation
-    bm_cf = deepcopy(handler.get_sample_cf())
+    for i in tqdm(range(len(handler.data))):
+        handler.sample_id = i
+        word_aoi = handler.get_word_aoi()
+        # Mission 1: iVT Filter
+        handler.run_ivt()
 
-    handler.run_alloc()
-    current_cf = handler.get_sample_cf()
+        # Mission 2: Line Allocation
+        # bm_cf = deepcopy(handler.get_sample_cf())
+        try:
+            handler.run_alloc()
+        except:
+            print(i)
+        # current_cf = handler.get_sample_cf()
 
-    # 그림으로 확인
-    # bm_rf = handler.get_sample_rf()
-    # compare_points(bm_rf, current_cf, bm_cf, handler.get_word_aoi(), handler.get_resolution())
+        # 그림으로 확인
+        # bm_rf = handler.get_sample_rf()
+        # compare_points(bm_rf, current_cf, bm_cf, handler.get_word_aoi(), handler.get_resolution())
 
-    # Metric
-    # db = get_lineAllo_dashboard(handler.get_sample_rp(), word_aoi, current_cf, bm_cf)
-    # export_excel(current_cf)
+        # Metric
+        # db = get_lineAllo_dashboard(handler.get_sample_rp(), word_aoi, current_cf, bm_cf)
+        # export_excel(current_cf)
     df = export_all(handler)
     print()
 
@@ -83,7 +88,7 @@ def main():
 if __name__ == '__main__':
     # 테스트할 때 여러 조건, 상태를 관리하는 방법으로 중간중간 상태를 확인하기 위한 plot을 다 보여주도록 설정한 것
     setattr(env, "SHOW_ALL_PLOTS", False)
-    setattr(env, "LOG_ALL", True)
+    setattr(env, "LOG_ALL", False)
 
     path_root = os.getcwd()
     handler = DataHandler(path_root, is_sample=False)

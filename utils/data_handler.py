@@ -37,7 +37,6 @@ class DataHandler:
             self.meta["status"] = "load"
             self.meta["dsrc"] = "raw"
             print("Every data has been loaded!")
-            # 문제가 되는 데이터
             dat_list.pop(28)
         else:
             if self.sample_id > len(dat_list)-1:
@@ -49,7 +48,7 @@ class DataHandler:
             print(f"{self.sample_id}th data is loaded")
 
         print(f"Excluded data : {num_excluded}")
-        self.data = [Visc(i) for i in dat_list]
+        self.data = [Visc(i) for i in dat_list if len(i["rawGazePoint"]) > 100]
 
     def __len__(self):
         return len(self.data)
@@ -59,24 +58,31 @@ class DataHandler:
 
     # STEP1
     def run_ivt(self):
-        #
-        prog = tqdm(self.data)
-        for dat in prog:
-            raw_fixation = iVT.run(dat.rawGazePointList)
-            setattr(dat, "rawFixationList", raw_fixation)
-            prog.set_description("iVT Filter Progress")
+        dat = self.data[self.sample_id]
+        raw_fixation = iVT.run(dat.rawGazePointList)
+        setattr(dat, "rawFixationList", raw_fixation)
 
-        self.meta['status'] = "iVT"
+        # prog = tqdm(self.data)
+        # for dat in prog:
+        #     raw_fixation = iVT.run(dat.rawGazePointList)
+        #     setattr(dat, "rawFixationList", raw_fixation)
+        #     prog.set_description("iVT Filter Progress")
+
+        # self.meta['status'] = "iVT"
 
     # STEP2
     def run_alloc(self):
-        prog = tqdm(self.data)
-        for dat in prog:
-            corrected_fixation = allocation.run(dat.rawFixationList, dat.wordAoiList)
-            setattr(dat, "correctedFixationList", corrected_fixation)
-            prog.set_description("Line Allocation Progress")
+        dat = self.data[self.sample_id]
+        corrected_fixation = allocation.run(dat.rawFixationList, dat.wordAoiList)
+        setattr(dat, "correctedFixationList", corrected_fixation)
 
-        self.meta['status'] = "DONE"
+        # prog = tqdm(self.data)
+        # for dat in prog:
+        #     corrected_fixation = allocation.run(dat.rawFixationList, dat.wordAoiList)
+        #     setattr(dat, "correctedFixationList", corrected_fixation)
+        #     prog.set_description("Line Allocation Progress")
+
+        # self.meta['status'] = "DONE"
 
     # RUN
     def run(self):

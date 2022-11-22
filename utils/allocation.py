@@ -396,7 +396,7 @@ def allocate_order_id(rfs, word_aois):
         line_x = np.array([word.wordBox.x for word in line])[:, np.newaxis]
         segment_x = np.array([point.x for point in segment])[:, np.newaxis]
 
-        line_x *= (np.max(segment_x)-np.min(segment_x)) / (np.max(line_x) - np.min(line_x))
+        # line_x *= (np.max(segment_x)-np.min(segment_x)) / (np.max(line_x) - np.min(line_x))
         distances = pairwise_distances(segment_x, line_x)
         word_idx = np.argmin(distances, axis=1)
         for rf, word_id in zip(segment, word_idx):
