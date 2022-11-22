@@ -37,6 +37,8 @@ class DataHandler:
             self.meta["status"] = "load"
             self.meta["dsrc"] = "raw"
             print("Every data has been loaded!")
+            # 문제가 되는 데이터
+            dat_list.pop(28)
         else:
             if self.sample_id > len(dat_list)-1:
                 self.sample_id = len(dat_list) - 1

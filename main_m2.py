@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from copy import deepcopy
 
 import env
-from utils.metric import get_lineAllo_dashboard, export_excel
+from utils.metric import get_lineAllo_dashboard, export_excel, export_all
 from utils.data_handler import DataHandler
 from utils.visual import set_scale, plot_points, plot_text, plot_lines
 
@@ -70,12 +70,14 @@ def main():
     current_cf = handler.get_sample_cf()
 
     # 그림으로 확인
-    bm_rf = handler.get_sample_rf()
-    compare_points(bm_rf, current_cf, bm_cf, handler.get_word_aoi(), handler.get_resolution())
+    # bm_rf = handler.get_sample_rf()
+    # compare_points(bm_rf, current_cf, bm_cf, handler.get_word_aoi(), handler.get_resolution())
 
     # Metric
     # db = get_lineAllo_dashboard(handler.get_sample_rp(), word_aoi, current_cf, bm_cf)
-    export_excel(current_cf)
+    # export_excel(current_cf)
+    df = export_all(handler)
+    print()
 
 
 if __name__ == '__main__':
@@ -84,5 +86,5 @@ if __name__ == '__main__':
     setattr(env, "LOG_ALL", True)
 
     path_root = os.getcwd()
-    handler = DataHandler(path_root, is_sample=True, sample_id=30)
+    handler = DataHandler(path_root, is_sample=False)
     main()

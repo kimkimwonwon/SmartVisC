@@ -18,6 +18,7 @@ import numpy as np
 import pandas as pd
 from tabulate import tabulate
 from collections import defaultdict
+from tqdm import tqdm
 
 import env
 
@@ -113,13 +114,28 @@ def get_lineAllo_dashboard(rps, word_aoi, point_cur, point_bm):
     return db
 
 
-def export_excel(cfs):
+def export_excel(cfs, is_save=False):
     raw = []
     for cf in cfs:
         raw.append(cf.__dict__)
     df = pd.DataFrame(raw)
     print(df.head(10))
     df.to_excel("data/result_line.xlsx")
+
+
+def export_all(handler):
+    res = pd.DataFrame([])
+    prog = tqdm(enumerate(handler.data))
+    for i, dat in prog:
+        tmp_cfs = dat.correctedFixationList
+        raw = []
+        for cf in tmp_cfs:
+            raw.append(cf.__dict__)
+        df = pd.DataFrame(raw)
+        df['ID'] = i
+        res = pd.concat((res, df), axis=0)
+        prog.set_description(f"{i} of {len(handler.data)} Excel exporting")
+    return res
 
 
 def eval_metric():
